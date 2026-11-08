@@ -347,10 +347,28 @@ def build():
         mid = (a + c) / 2 + off / 2
         col_box(f"Ramp_{'L' if side < 0 else 'R'}", None, None, rot_y=ang_y, center=(mid.x, 0.0, mid.z),
                 size=(length, rw, rt))
-        # stack of books under the high end (decor support)
-        bx = side * 8.2
-        for k, col in enumerate(("book_r", "book_g", "book_r")):
-            b.box((bx - 0.7, -0.6, k * 0.35), (bx + 0.7, 0.6, k * 0.35 + 0.35), col, top=col)
+        # book stacks under the board: a staircase that fills the space below it.
+        # Each stack stops just under the board (never pokes through) and is solid,
+        # so mice can neither walk through the books nor crawl under the ramp.
+        run = abs(x_high - x_low)
+        under = rt / math.cos(math.atan2(z_high, run))          # vertical thickness of the board
+        def underside(u):                                        # u = distance from room centre
+            return (abs(x_low) - u) / run * z_high - under
+        spans = [(4.0, 5.3), (5.3, 6.3), (6.3, 7.3), (7.3, 8.3), (8.3, 9.3)]
+        palette = ("book_r", "book_g", "board", "book_r", "book_g")
+        for k, (u0, u1) in enumerate(spans):
+            h = underside(u1) - 0.02
+            if h <= 0.05:
+                continue
+            xa, xb = sorted((side * u0, side * u1))
+            ya, yb = -rw / 2 + 0.05, rw / 2 - 0.05
+            layers = max(1, math.ceil(h / 0.35))
+            lh = h / layers
+            for L in range(layers):
+                col = palette[(k + L) % len(palette)]
+                inset = 0.04 if L % 2 else 0.0                    # slightly uneven pile, looks like books
+                b.box((xa + inset, ya + inset, L * lh), (xb - inset, yb - inset, (L + 1) * lh), col, top=col)
+            col_box(f"Books_{'L' if side < 0 else 'R'}_{k}", (xa, ya, 0.0), (xb, yb, h))
 
     # ---- chairs (obstacles / cover) -------------------------------------
     for cx in (-2.2, 2.2):

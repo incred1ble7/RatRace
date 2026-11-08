@@ -169,9 +169,11 @@ namespace MouseGame.EditorTools
         {
             var tex = AssetDatabase.LoadAssetAtPath<Texture2D>(TexturePath);
             var mat = AssetDatabase.LoadAssetAtPath<Material>(MaterialPath);
-            var shader = GraphicsSettings.currentRenderPipeline != null
-                ? Shader.Find("Universal Render Pipeline/Simple Lit")
-                : Shader.Find("Mobile/Diffuse");
+            var shader = Shader.Find("MouseGame/Toon");
+            if (shader == null)
+                shader = GraphicsSettings.currentRenderPipeline != null
+                    ? Shader.Find("Universal Render Pipeline/Simple Lit")
+                    : Shader.Find("Mobile/Diffuse");
             if (mat == null)
             {
                 mat = new Material(shader) { name = "M_Kitchen" };

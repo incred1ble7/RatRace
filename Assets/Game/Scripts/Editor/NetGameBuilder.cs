@@ -242,7 +242,7 @@ namespace MouseGame.EditorTools
             sun.type = LightType.Directional;
             sun.shadows = LightShadows.Soft;
             sun.shadowStrength = night ? 0.5f : 0.75f;
-            sun.intensity = night ? 0.35f : 1.15f;
+            sun.intensity = night ? 0.7f : 1.0f;
             sun.color = night ? new Color(0.55f, 0.65f, 1f) : new Color(1f, 0.96f, 0.88f);
             lightGo.transform.rotation = Quaternion.Euler(night ? 60f : 50f, night ? 200f : 330f, 0f);
 
@@ -250,6 +250,9 @@ namespace MouseGame.EditorTools
             RenderSettings.ambientMode = AmbientMode.Flat;
             RenderSettings.ambientLight = night ? new Color(0.13f, 0.15f, 0.25f) : new Color(0.55f, 0.52f, 0.50f);
             RenderSettings.fog = false;
+            // toon shade colour for this level (warm by day, moonlit blue at night)
+            new GameObject("ToonLighting").AddComponent<ToonSceneLighting>().shadeColor =
+                night ? new Color(0.22f, 0.26f, 0.46f) : new Color(0.68f, 0.60f, 0.64f);
 
             if (night)
             {
@@ -314,12 +317,13 @@ namespace MouseGame.EditorTools
         static Material Mat(string name, Color c, bool unlit = false, bool transparent = false)
         {
             string path = MatDir + name + ".mat";
-            var shader = Shader.Find(unlit ? "Universal Render Pipeline/Unlit" : "Universal Render Pipeline/Simple Lit");
+            var shader = Shader.Find(unlit ? "Universal Render Pipeline/Unlit" : "MouseGame/Toon");
             var m = AssetDatabase.LoadAssetAtPath<Material>(path);
             if (m == null) { m = new Material(shader); AssetDatabase.CreateAsset(m, path); }
             else m.shader = shader;
             m.SetColor("_BaseColor", c);
             if (m.HasProperty("_Smoothness")) m.SetFloat("_Smoothness", 0.1f);
+            if (m.HasProperty("_OutlineFromTangent")) m.SetFloat("_OutlineFromTangent", 0f);   // Unity primitives: smooth normals already
             if (transparent)
             {
                 m.SetFloat("_Surface", 1f);          // Transparent

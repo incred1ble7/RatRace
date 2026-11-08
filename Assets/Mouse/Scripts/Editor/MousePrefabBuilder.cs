@@ -113,6 +113,8 @@ namespace MouseGame.EditorTools
 
         static Shader PickShader()
         {
+            var toon = Shader.Find("MouseGame/Toon");
+            if (toon != null) return toon;
             bool srp = GraphicsSettings.currentRenderPipeline != null;
             string[] candidates = srp
                 ? new[] { "Universal Render Pipeline/Simple Lit", "Universal Render Pipeline/Lit", "HDRP/Lit" }
