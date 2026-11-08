@@ -1,0 +1,43 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!319 &31900000
+AvatarMask:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: AM_Mouse_Carry
+  m_Mask: 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000u
+  m_Elements:
+  - m_Path: MouseRig
+    m_Weight: 0
+  - m_Path: MouseRig/Root
+    m_Weight: 0
+  - m_Path: MouseRig/Root/Body
+    m_Weight: 0
+  - m_Path: MouseRig/Root/Body/Leg_BL
+    m_Weight: 0
+  - m_Path: MouseRig/Root/Body/Leg_BR
+    m_Weight: 0
+  - m_Path: MouseRig/Root/Body/Spine
+    m_Weight: 0
+  - m_Path: MouseRig/Root/Body/Spine/Food_Socket
+    m_Weight: 0
+  - m_Path: MouseRig/Root/Body/Spine/Head
+    m_Weight: 1
+  - m_Path: MouseRig/Root/Body/Spine/Head/Ear_L
+    m_Weight: 0
+  - m_Path: MouseRig/Root/Body/Spine/Head/Ear_R
+    m_Weight: 0
+  - m_Path: MouseRig/Root/Body/Spine/Leg_FL
+    m_Weight: 1
+  - m_Path: MouseRig/Root/Body/Spine/Leg_FR
+    m_Weight: 1
+  - m_Path: MouseRig/Root/Body/Tail_1
+    m_Weight: 0
+  - m_Path: MouseRig/Root/Body/Tail_1/Tail_2
+    m_Weight: 0
+  - m_Path: MouseRig/Root/Body/Tail_1/Tail_2/Tail_3
+    m_Weight: 0
+  - m_Path: MouseRig/Root/Body/Tail_1/Tail_2/Tail_3/Tail_4
+    m_Weight: 0

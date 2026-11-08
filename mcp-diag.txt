@@ -1,0 +1,33 @@
+=== uv version === 
+uv 0.13.7 (316c827e0 2026-11-03 x86_64-pc-windows-msvc)
+=== uv python list (installed) === 
+cpython-3.15.2-windows-x86_64-none     C:\Users\MSI\AppData\Roaming\uv\python\cpython-3.15-windows-x86_64-none\python.exe
+cpython-3.12.16-windows-x86_64-none    C:\Users\MSI\AppData\Roaming\uv\python\cpython-3.12.16-windows-x86_64-none\python.exe
+cpython-3.12.16-windows-x86_64-none    C:\Users\MSI\.local\bin\python3.12.exe
+cpython-3.12.16-windows-x86_64-none    C:\Users\MSI\AppData\Roaming\uv\python\cpython-3.12-windows-x86_64-none\python.exe
+=== DLLs in 3.12 === 
+libssl-3-x64.dll
+_ssl.pyd
+libcrypto-3-x64.dll
+=== ssl test 3.12 normal PATH === 
+Traceback (most recent call last):
+  File "<string>", line 1, in <module>
+  File "C:\Users\MSI\AppData\Roaming\uv\python\cpython-3.12-windows-x86_64-none\Lib\ssl.py", line 100, in <module>
+    import _ssl             # if we can't import it, let the error propagate
+    ^^^^^^^^^^^
+ImportError: DLL load failed while importing _ssl: Политика управления приложениями заблокировала этот файл.
+=== ssl test 3.12 clean PATH === 
+Traceback (most recent call last):
+  File "<string>", line 1, in <module>
+  File "C:\Users\MSI\AppData\Roaming\uv\python\cpython-3.12-windows-x86_64-none\Lib\ssl.py", line 100, in <module>
+    import _ssl             # if we can't import it, let the error propagate
+    ^^^^^^^^^^^
+ImportError: DLL load failed while importing _ssl: Политика управления приложениями заблокировала этот файл.
+=== ssl test 3.13 === 
+Downloading cpython-3.13.18-windows-x86_64-none (download) (21.0MiB)
+ Downloaded cpython-3.13.18-windows-x86_64-none (download)
+OpenSSL 3.5.9 29 Sep 2026
+=== Git ssl dlls === 
+libcurl-openssl-4.dll
+libssl-3-x64.dll
+openssl.exe
