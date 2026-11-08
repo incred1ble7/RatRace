@@ -270,6 +270,7 @@ namespace MouseGame.EditorTools
                 {
                     r.sharedMaterial = mat;
                     r.lightProbeUsage = LightProbeUsage.Off;
+                    r.shadowCastingMode = ShadowCastingMode.Off; // tiny moving food: no shadow pass
                     r.reflectionProbeUsage = ReflectionProbeUsage.Off;
                 }
                 PrefabUtility.SaveAsPrefabAsset(inst, CheesePrefabPath);

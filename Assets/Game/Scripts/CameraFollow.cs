@@ -6,7 +6,7 @@ namespace MouseGame
     public class CameraFollow : MonoBehaviour
     {
         [SerializeField] Transform target;
-        [SerializeField] Vector3 offset = new Vector3(0f, 1.5f, -1.7f);
+        [SerializeField] Vector3 offset = new Vector3(0f, 2.6f, -2.6f);
         [SerializeField] float lookHeight = 0.15f;
         [SerializeField] float smoothTime = 0.15f;
 

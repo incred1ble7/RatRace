@@ -30,6 +30,16 @@ namespace MouseGame
 
         void OnDisable() => Release();
 
+        /// <summary>Wire up when the UI is built from code.</summary>
+        public void Setup(RectTransform bg, RectTransform stick, float maxRadius)
+        {
+            zone = (RectTransform)transform;
+            background = bg;
+            handle = stick;
+            radius = maxRadius;
+            restPosition = bg.anchoredPosition;
+        }
+
         public void OnPointerDown(PointerEventData e)
         {
             if (pointerId != int.MinValue) return;           // ignore second finger
