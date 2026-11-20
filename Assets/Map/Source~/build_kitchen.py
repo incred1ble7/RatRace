@@ -82,9 +82,35 @@ def uv_of(color):
 # Mesh builder: everything visible goes into one bmesh
 # --------------------------------------------------------------------------
 class Builder:
+    """Collects faces per named object (begin() starts the next object)."""
+
     def __init__(self):
+        self.objects = []
+        self.name = None
+        self.bm = None
+        self.col_start = 0
+
+    def begin(self, name):
+        self.flush()
+        self.name = name
         self.bm = bmesh.new()
         self.uv = self.bm.loops.layers.uv.new("UVMap")
+        self.col_start = len(COLLIDERS)
+
+    def flush(self):
+        if self.bm is None:
+            return
+        if len(self.bm.faces) == 0:
+            self.bm.free()
+        else:
+            ob = self.to_object(self.name)
+            # colliders made while building this object become its children (they move with it)
+            for c in COLLIDERS[self.col_start:]:
+                if c.parent is None:
+                    c.location = Vector(c.location) - ob.location
+                    c.parent = ob
+            self.objects.append(ob)
+        self.bm = None
 
     def face(self, pts, color):
         vs = [self.bm.verts.new(p) for p in pts]
@@ -151,12 +177,18 @@ class Builder:
 
     def to_object(self, name):
         bmesh.ops.remove_doubles(self.bm, verts=self.bm.verts, dist=0.0001)
+        # pivot at the bottom centre of the object, so it is easy to move / rotate in Unity
+        xs = [v.co.x for v in self.bm.verts]; ys = [v.co.y for v in self.bm.verts]; zs = [v.co.z for v in self.bm.verts]
+        origin = Vector(((min(xs) + max(xs)) / 2, (min(ys) + max(ys)) / 2, min(zs)))
+        for v in self.bm.verts:
+            v.co -= origin
         me = bpy.data.meshes.new(name)
         self.bm.to_mesh(me)
         self.bm.free()
         for p in me.polygons:
             p.use_smooth = False
         ob = bpy.data.objects.new(name, me)
+        ob.location = origin
         bpy.context.scene.collection.objects.link(ob)
         return ob
 
@@ -213,6 +245,7 @@ def build():
     b = Builder()
 
     # ---- floor (checker tiles, 2 m) --------------------------------------
+    b.begin("Floor")
     tile = 2.0
     nx, ny = int(2 * HX / tile), int(2 * HY / tile)
     for i in range(nx):
@@ -223,6 +256,7 @@ def build():
     col_box("Floor", (-HX - 1, -HY - 1, -0.5), (HX + 1, HY + 1, 0.0))
 
     # ---- walls: back + sides (front is open towards the camera) ---------
+    b.begin("Walls")
     b.box((-HX - WALL_T, HY, 0), (HX + WALL_T, HY + WALL_T, WALL_H), "wall", skip=("py",))
     b.box((-HX - WALL_T, -HY, 0), (-HX, HY, WALL_H), "wall", skip=("nx",))
     b.box((HX, -HY, 0), (HX + WALL_T, HY, WALL_H), "wall", skip=("px",))
@@ -240,6 +274,27 @@ def build():
     b.box((-2.0, HY - 0.02, 5.6), (2.0, HY, 7.6), "window", skip=("py",))
     b.box((-2.2, HY - 0.06, 5.4), (2.2, HY - 0.02, 5.6), "wood")
 
+    # ---- hallway in front of the kitchen (decor, not walkable) ----------------
+    # The kitchen has no front wall so the camera can look in. When a mouse is near the
+    # front edge the camera stands outside the room, so the floor and side walls continue
+    # here: the player never sees the empty space beyond the map.
+    b.begin("Hallway")
+    HALL = 8.0
+    nx_t = int(2 * HX / tile)
+    for i in range(nx_t):
+        for j in range(int(HALL / tile)):
+            x0, y0 = -HX + i * tile, -HY - (j + 1) * tile
+            c = "tile_a" if (i + j + 1) % 2 == 0 else "tile_b"
+            b.face([(x0, y0, 0), (x0 + tile, y0, 0), (x0 + tile, y0 + tile, 0), (x0, y0 + tile, 0)], c)
+    b.box((-HX - WALL_T, -HY - HALL, 0), (-HX, -HY, WALL_H), "wall", skip=("nx",))
+    b.box((HX, -HY - HALL, 0), (HX + WALL_T, -HY, WALL_H), "wall", skip=("px",))
+    b.box((-HX, -HY - HALL, 0), (-HX + BASE_T, -HY, BASE_H), "baseboard", skip=("nx",))
+    b.box((HX - BASE_T, -HY - HALL, 0), (HX, -HY, BASE_H), "baseboard", skip=("px",))
+    # far end of the hallway (faces the kitchen)
+    b.face([(HX + WALL_T, -HY - HALL, 0), (-HX - WALL_T, -HY - HALL, 0), (-HX - WALL_T, -HY - HALL, WALL_H), (HX + WALL_T, -HY - HALL, WALL_H)], "wall")
+    # door threshold strip on the boundary: shows where the play area ends
+    b.box((-HX, -HY - 0.35, 0), (HX, -HY, 0.06), "wood_dark", top="wood_dark")
+
     # ---- mouse holes: arch decals + markers + spawns ---------------------
     n = 1
     for side in (-1, 1):
@@ -252,6 +307,7 @@ def build():
             n += 1
 
     # ---- fridge (back centre, open door) ---------------------------------
+    b.begin("Fridge")
     fx0, fx1, fy0, fy1, fh = -2.6, 2.6, 5.0, HY, 10.0
     t = 0.3
     b.box((fx0, fy0, 0), (fx0 + t, fy1, fh), "fridge")                 # left side
@@ -261,6 +317,10 @@ def build():
     b.box((fx0 + t, fy0 + 0.2, 3.2), (fx1 - t, fy1 - t, 3.35), "fridge_in", top="metal")   # shelves
     b.box((fx0 + t, fy0 + 0.2, 6.4), (fx1 - t, fy1 - t, 6.55), "fridge_in", top="metal")
     b.face([(fx0 + t, fy0, 0.005), (fx1 - t, fy0, 0.005), (fx1 - t, fy1 - t, 0.005), (fx0 + t, fy1 - t, 0.005)], "fridge_in")
+    col_box("Fridge_L", (fx0, fy0, 0), (fx0 + t, fy1, fh))
+    col_box("Fridge_R", (fx1 - t, fy0, 0), (fx1, fy1, fh))
+    col_box("Fridge_Back", (fx0, fy1 - t, 0), (fx1, fy1, fh))
+    b.begin("FridgeDoor")
     # door hinged on the right, swung open ~150 deg towards the right counter (stays clear of the table)
     hinge = Vector((fx1, fy0, 0))
     ang = math.radians(150)
@@ -273,15 +333,13 @@ def build():
     p3 = hinge + dir_d * d
     b.quad_box([p0, p3, p2, p1], fh - 0.4, "fridge", top="fridge")
     door_center = (p0 + p1 + p2 + p3) / 4
-    col_box("Fridge_L", (fx0, fy0, 0), (fx0 + t, fy1, fh))
-    col_box("Fridge_R", (fx1 - t, fy0, 0), (fx1, fy1, fh))
-    col_box("Fridge_Back", (fx0, fy1 - t, 0), (fx1, fy1, fh))
     col_box("Fridge_Door", None, None, rot_z=ang, center=(door_center.x, door_center.y, (fh - 0.4) / 2),
             size=(w, d, fh - 0.4))
 
     # ---- counters (back-left with sink, back-right with stove) ----------
     for side in (-1, 1):
         cx0, cx1 = (-HX, -4.0) if side < 0 else (4.0, HX)
+        b.begin("Counter_Sink" if side < 0 else "Counter_Stove")
         cy0, cy1 = 6.0, HY
         b.box((cx0, cy0 + 0.35, 0), (cx1, cy1, 0.4), "black", skip=("nz",))           # toe kick
         b.box((cx0, cy0, 0.4), (cx1, cy1, 4.3), "cabinet")
@@ -306,6 +364,7 @@ def build():
                 b.ring((sx, sy), 0.3, 0.42, 4.53, "metal", seg=12)
 
     # ---- dining table ------------------------------------------------------
+    b.begin("Table")
     T = TABLE
     top_z0 = T["top"] - T["thick"]
     b.box((T["x0"], T["y0"], top_z0), (T["x1"], T["y1"], T["top"]), "wood", top="wood", bottom=True)
@@ -327,6 +386,7 @@ def build():
     rw, rt = 1.4, 0.15
     for side in (-1, 1):
         x_low, x_high = side * 10.0, side * T["x1"]
+        b.begin("Ramp_L" if side < 0 else "Ramp_R")
         z_high = T["top"]
         y0, y1 = -rw / 2, rw / 2
         # top surface from (x_low, 0) to (x_high, z_high); thickness below
@@ -355,6 +415,7 @@ def build():
         def underside(u):                                        # u = distance from room centre
             return (abs(x_low) - u) / run * z_high - under
         spans = [(4.0, 5.3), (5.3, 6.3), (6.3, 7.3), (7.3, 8.3), (8.3, 9.3)]
+        b.begin("Books_L" if side < 0 else "Books_R")
         palette = ("book_r", "book_g", "board", "book_r", "book_g")
         for k, (u0, u1) in enumerate(spans):
             h = underside(u1) - 0.02
@@ -373,6 +434,7 @@ def build():
     # ---- chairs (obstacles / cover) -------------------------------------
     for cx in (-2.2, 2.2):
         cy = -4.2
+        b.begin("Chair_L" if cx < 0 else "Chair_R")
         s = 1.1
         b.box((cx - s, cy - s, 2.0), (cx + s, cy + s, 2.2), "wood", bottom=True)
         for lx in (cx - s + 0.1, cx + s - 0.35):
@@ -382,8 +444,10 @@ def build():
         b.box((cx - s, cy - s, 2.2), (cx + s, cy - s + 0.2, 4.4), "wood")
 
     # ---- obstacles: cat bowl, crate --------------------------------------
+    b.begin("CatBowl")
     b.cylinder((-7.0, -6.2), 0.9, 0.0, 0.45, "bowl", top="black")
     col_box("Bowl", (-7.9, -7.1, 0), (-6.1, -5.3, 0.45))
+    b.begin("Crate")
     b.box((6.2, -7.4, 0), (8.0, -5.6, 1.6), "crate", top="crate")
     b.box((6.2, -7.45, 0.7), (8.0, -7.4, 0.9), "wood_dark")
     col_box("Crate", (6.2, -7.4, 0), (8.0, -5.6, 1.6))
@@ -401,11 +465,12 @@ def build():
         z = T["top"] if tier == 3 else 0.0
         marker(f"FOOD_{tier}_{k:02d}", (x, y, z))
 
-    vis = b.to_object("Kitchen_Visual")
-    return vis
+    b.flush()
+    return b.objects
 
 
-def make_material(obj, tex_path):
+def make_material(objs, tex_path):
+    """One shared material for every kitchen object (Unity batches them together)."""
     mat = bpy.data.materials.new("M_Kitchen")
     mat.use_nodes = True
     nt = mat.node_tree
@@ -415,7 +480,8 @@ def make_material(obj, tex_path):
     tex.interpolation = "Closest"
     nt.links.new(tex.outputs["Color"], bsdf.inputs["Base Color"])
     bsdf.inputs["Roughness"].default_value = 0.9
-    obj.data.materials.append(mat)
+    for obj in objs:
+        obj.data.materials.append(mat)
 
 
 def group(name, objs):
@@ -436,16 +502,20 @@ def main():
     tex_path = os.path.join(TEX_DIR, "T_Kitchen_Palette.png")
     write_palette(tex_path)
 
-    vis = build()
-    make_material(vis, tex_path)
+    objs = build()
+    make_material(objs, tex_path)
     root = bpy.data.objects.new("Kitchen", None)
     scn.collection.objects.link(root)
-    vis.parent = root
-    group("Colliders", COLLIDERS).parent = root
+    for o in objs:
+        o.parent = root
+    loose = [c for c in COLLIDERS if c.parent is None]
+    if loose:
+        group("Colliders", loose).parent = root
     group("Markers", MARKERS).parent = root
 
-    tris = sum(len(p.vertices) - 2 for p in vis.data.polygons)
-    print(f"[kitchen] visual tris={tris} verts={len(vis.data.vertices)} colliders={len(COLLIDERS)} markers={len(MARKERS)}")
+    tris = sum(len(p.vertices) - 2 for o in objs for p in o.data.polygons)
+    print(f"[kitchen] objects={len(objs)} ({', '.join(o.name for o in objs)}) tris={tris} "
+          f"colliders={len(COLLIDERS)} loose={len(loose)} markers={len(MARKERS)}")
 
     for o in scn.objects:
         o.select_set(True)

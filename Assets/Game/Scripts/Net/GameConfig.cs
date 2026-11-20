@@ -34,7 +34,7 @@ namespace MouseGame.Net
         public const float CarryMinSpeedFactor = 0.45f;
         public const int MaxCarry = 8;
         public const float PickupRadius = 0.6f;
-        public const float DeliverRadius = 1.3f;
+        public const float DeliverRadius = 0.75f;   // must reach the burrow entrance to hand in food
 
         public const float DashSpeedMultiplier = 2.6f;
         public const float DashDuration = 0.22f;

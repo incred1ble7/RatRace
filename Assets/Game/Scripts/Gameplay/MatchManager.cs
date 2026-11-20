@@ -130,7 +130,7 @@ namespace MouseGame
                 if (m.CarriedCount.Value <= 0) continue;
                 var hole = Map.GetHole(m.Slot.Value);
                 if (hole == null) continue;
-                Vector3 target = hole.transform.position + hole.transform.forward * 0.4f;
+                Vector3 target = hole.transform.position + hole.transform.forward * 0.3f;   // right at the entrance
                 Vector3 d = m.transform.position - target;
                 if (Mathf.Abs(d.y) > 0.6f) continue;
                 d.y = 0f;
