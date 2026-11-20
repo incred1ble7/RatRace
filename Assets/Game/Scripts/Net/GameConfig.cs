@@ -45,14 +45,14 @@ namespace MouseGame.Net
         public const float TrapSlowSeconds = 3.0f;
         public const float TrapArmDelay = 0.8f;
 
-        public const float CatStunSeconds = 1.6f;
-        public const float CatAimChance = 0.8f;
+        public const float CatStunSeconds = 3.0f;
+        public const float CatAimChance = 0.75f;
         public const float CatPawRadius = 1.0f;
         public const float CatSafeHoleRadius = 1.8f;
         public const float CatEndIntervalFactor = 0.65f;
         public const float CatEndWarningFactor = 0.8f;
         public const float CatMinWarning = 0.5f;
-        public const float CatGraceSeconds = 1.0f;
+        public const float CatGraceSeconds = 1.5f;
         public const float CountdownSeconds = 3f;
 
         public static readonly int[] FoodValueByTier = { 0, 1, 2, 4 };

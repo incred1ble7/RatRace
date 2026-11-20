@@ -38,7 +38,7 @@ namespace MouseGame.UI
                 "• <b>Trap</b> — dropped behind you, slows a rival. Only one at a time.\n" +
                 "• The <b>cat</b> strikes with both paws anywhere in the kitchen — on the table and on the floor. " +
                 "A red circle blinks first — run! The cat aims where you are heading and loves mice with full paws. " +
-                "A hit mouse is stunned and drops half its food for others to grab.\n" +
+                "A squashed mouse is <b>frozen for 3 seconds</b> and drops half its food for others to grab.\n" +
                 "• You are safe <b>under the table or the ramps</b> and right next to your own burrow. The cat gets faster near the end.\n\n" +
                 "The best food is on the table. Bank a little now or risk it for more?",
             ["quit"] = "Quit",
@@ -75,7 +75,8 @@ namespace MouseGame.UI
             ["carry"] = "Carrying: {0} (+{1})",
             ["go"] = "Go!",
             ["delivered"] = "+{0} points!",
-            ["cat_hit"] = "The cat got you! Lost: {0}",
+            ["cat_hit"] = "Squashed by the cat! Lost: {0}",
+            ["frozen"] = "FROZEN\n{0:0.0}",
             ["trapped"] = "Trapped! You are slowed",
             ["full_paws"] = "Paws full — take it home!",
             ["hint_pc"] = "WASD move, E take, Shift dash, Q trap, Enter chat",

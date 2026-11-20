@@ -38,6 +38,7 @@ namespace MouseGame
         readonly Dictionary<NetMouse, Vector3> lastPos = new Dictionary<NetMouse, Vector3>();
         readonly Dictionary<NetMouse, Vector3> velocity = new Dictionary<NetMouse, Vector3>();
         static readonly RaycastHit[] hitBuf = new RaycastHit[16];
+        readonly double[] pawChecked = { -1, -1 };
         Transform[] paws;
         Renderer[] discs;
 
@@ -94,6 +95,7 @@ namespace MouseGame
         void Update()
         {
             UpdateCatVisuals();
+            LocalCatCheck();
             if (!IsServer || !IsSpawned) return;
 
             switch (State.Value)
@@ -251,24 +253,42 @@ namespace MouseGame
                 if (!pawResolved[i] && Now >= PawAt(i))
                 {
                     pawResolved[i] = true;
-                    ResolveStrike(PawTarget(i));
                     pawNext[i] = Now + Mathf.Max(1.2f + warning, Info.CatInterval * intervalMul * Random.Range(0.75f, 1.25f));
                 }
             }
         }
 
-        void ResolveStrike(Vector3 c)
+        void LocalCatCheck()
         {
-            float r = GameConfig.CatPawRadius;
-            foreach (var m in NetMouse.All)
+            var me = NetMouse.Local;
+            if (me == null || !IsSpawned || State.Value != MatchState.Playing) return;
+            for (int i = 0; i < 2; i++)
             {
-                if (m.IsStunned || Now < m.StunUntil.Value + GameConfig.CatGraceSeconds) continue;
-                Vector3 d = m.transform.position - c;
+                double at = PawAt(i);
+                if (at < 0 || at == pawChecked[i] || Now < at || Now - at > 0.6) continue;
+                pawChecked[i] = at;
+                if (me.IsProtected) continue;
+                Vector3 c = PawTarget(i);
+                Vector3 p = me.transform.position;
+                Vector3 d = p - c;
                 if (Mathf.Abs(d.y) > 0.8f) continue;
                 d.y = 0f;
-                if (d.sqrMagnitude > r * r || IsCovered(m.transform.position)) continue;
-                HitByCat(m, c.y);
+                if (d.sqrMagnitude > GameConfig.CatPawRadius * GameConfig.CatPawRadius || IsCovered(p)) continue;
+                me.ReportCatHitRpc(i, at, p);
             }
+        }
+
+        public void ServerCatHitReport(NetMouse m, int paw, double strikeAt, Vector3 ownerPos)
+        {
+            if (!IsServer || !IsPlaying || paw < 0 || paw > 1) return;
+            if (System.Math.Abs(PawAt(paw) - strikeAt) > 0.001 || Now - strikeAt > 2.0) return;
+            if (m.IsProtected) return;
+            Vector3 c = PawTarget(paw);
+            Vector3 d = m.transform.position - c;
+            d.y = 0f;
+            float slack = GameConfig.CatPawRadius + 1.5f;
+            if (d.sqrMagnitude > slack * slack) return;
+            HitByCat(m, c.y, ownerPos);
         }
 
         void SchedulePaw(int i, float warning)
@@ -329,7 +349,7 @@ namespace MouseGame
             float total = 0f;
             foreach (var m in NetMouse.All)
             {
-                if (m.IsStunned || Now < m.StunUntil.Value + GameConfig.CatGraceSeconds) continue;
+                if (m.IsProtected) continue;
                 Vector3 pos = m.transform.position;
                 if (NearOwnHole(m) || IsCovered(pos)) continue;
                 float w = 1f + m.CarriedValue.Value * 0.5f;
@@ -367,7 +387,7 @@ namespace MouseGame
             return ok;
         }
 
-        void HitByCat(NetMouse m, float groundY)
+        void HitByCat(NetMouse m, float groundY, Vector3 at)
         {
             m.StunUntil.Value = Now + GameConfig.CatStunSeconds;
             int count = m.CarriedCount.Value, value = m.CarriedValue.Value;
@@ -381,7 +401,7 @@ namespace MouseGame
                 {
                     int v = lostValue / lose + (i < lostValue % lose ? 1 : 0);
                     float a = (i / (float)lose) * Mathf.PI * 2f + Random.value;
-                    Vector3 p = m.transform.position + new Vector3(Mathf.Cos(a), 0f, Mathf.Sin(a)) * Random.Range(0.6f, 1.0f);
+                    Vector3 p = at + new Vector3(Mathf.Cos(a), 0f, Mathf.Sin(a)) * Random.Range(0.6f, 1.0f);
                     p.y = groundY;
                     SpawnFood(p, v >= 4 ? 3 : v >= 2 ? 2 : 1, Mathf.Max(1, v));
                 }

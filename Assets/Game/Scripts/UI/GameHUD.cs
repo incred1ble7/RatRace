@@ -195,7 +195,10 @@ namespace MouseGame
                 else
                 {
                     float sincePlay = (float)(mm.Now - mm.StartTime.Value);
-                    bigText.text = mm.State.Value == MatchState.Playing && sincePlay < 1f ? L10n.T("go") : "";
+                    bool frozen = me != null && me.IsStunned && mm.IsPlaying;
+                    bigText.text = frozen ? L10n.F("frozen", me.FreezeLeft) : mm.State.Value == MatchState.Playing && sincePlay < 1f ? L10n.T("go") : "";
+                    bigText.color = frozen ? new Color(0.6f, 0.85f, 1f) : UIKit.Accent;
+                    bigText.fontSize = frozen ? 90 : 150;
                     timer.text = Clock(left);
                     timer.color = left < 15f && mm.IsPlaying ? UIKit.Bad : UIKit.TextCol;
                 }

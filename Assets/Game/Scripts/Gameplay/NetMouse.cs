@@ -35,11 +35,17 @@ namespace MouseGame
         Transform carried;
         Transform model;
         Renderer ring;
+        Renderer[] bodyRenderers;
+        MaterialPropertyBlock mpb;
+        bool tinted;
+        static readonly int BaseColorId = Shader.PropertyToID("_BaseColor");
 
         public float DashCooldown01 => Mathf.Clamp01((dashReadyAt - Time.time) / GameConfig.DashCooldown);
         public float TrapCooldown01 => Mathf.Clamp01((trapReadyAt - Time.time) / GameConfig.TrapCooldown);
         public double Now => NetworkManager != null ? NetworkManager.ServerTime.Time : 0;
         public bool IsStunned => Now < StunUntil.Value;
+        public bool IsProtected => Now < StunUntil.Value + GameConfig.CatGraceSeconds;
+        public float FreezeLeft => Mathf.Max(0f, (float)(StunUntil.Value - Now));
         public bool IsSlowed => Now < SlowUntil.Value;
         public string PlayerName => SessionManager.Instance != null ? SessionManager.Instance.NameOf(OwnerClientId) : "?";
         public FoodItem NearbyFood { get; private set; }
@@ -49,6 +55,7 @@ namespace MouseGame
             cc = GetComponent<CharacterController>();
             if (visual == null) visual = GetComponent<MouseVisual>();
             model = transform.Find("Model");
+            bodyRenderers = model != null ? model.GetComponentsInChildren<Renderer>(true) : new Renderer[0];
         }
 
         public override void OnNetworkSpawn()
@@ -90,8 +97,14 @@ namespace MouseGame
 
         void OwnerUpdate()
         {
-            bool canAct = InputEnabled.Value && !IsStunned;
+            bool frozen = IsStunned;
+            bool canAct = InputEnabled.Value && !frozen;
             Vector2 input = canAct ? GameInput.Move : Vector2.zero;
+            if (frozen)
+            {
+                velocity = Vector3.zero;
+                dashUntil = 0f;
+            }
 
             Vector3 fwd = Vector3.forward, right = Vector3.right;
             if (cam != null)
@@ -180,6 +193,12 @@ namespace MouseGame
             return r;
         }
 
+        [Rpc(SendTo.Server)]
+        public void ReportCatHitRpc(int paw, double strikeAt, Vector3 ownerPos)
+        {
+            MatchManager.Instance?.ServerCatHitReport(this, paw, strikeAt, ownerPos);
+        }
+
         [Rpc(SendTo.Owner)]
         public void NotifyRpc(string key, int arg) => GameHUD.Instance?.Toast(UI.L10n.F(key, arg), key == "delivered");
 
@@ -192,11 +211,33 @@ namespace MouseGame
             shownSpeed = Mathf.Lerp(shownSpeed, inst, 1f - Mathf.Exp(-15f * Time.deltaTime));
             if (visual != null) visual.SetSpeed(shownSpeed < 0.05f ? 0f : shownSpeed);
 
+            bool frozen = IsStunned;
             if (model != null)
             {
-                Vector3 target = IsStunned ? new Vector3(1.25f, 0.45f, 1.25f) : Vector3.one;
-                model.localScale = Vector3.Lerp(model.localScale, target, 1f - Mathf.Exp(-12f * Time.deltaTime));
+                Vector3 target = frozen ? new Vector3(1.35f, 0.35f, 1.35f) : Vector3.one;
+                model.localScale = Vector3.Lerp(model.localScale, target, 1f - Mathf.Exp(-14f * Time.deltaTime));
             }
+            if (visual != null && frozen) visual.SetSpeed(0f);
+
+            if (frozen != tinted)
+            {
+                tinted = frozen;
+                if (mpb == null) mpb = new MaterialPropertyBlock();
+                foreach (var r in bodyRenderers)
+                {
+                    if (r == null) continue;
+                    if (frozen)
+                    {
+                        r.GetPropertyBlock(mpb);
+                        mpb.SetColor(BaseColorId, new Color(0.55f, 0.8f, 1f, 1f));
+                        r.SetPropertyBlock(mpb);
+                    }
+                    else r.SetPropertyBlock(null);
+                }
+            }
+
+            bool blink = !frozen && IsProtected && Mathf.Repeat(Time.time * 8f, 1f) < 0.35f;
+            foreach (var r in bodyRenderers) if (r != null && r.enabled == blink) r.enabled = !blink;
         }
 
         void RefreshCarryVisual(int count)
