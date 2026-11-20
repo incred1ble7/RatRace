@@ -24,8 +24,8 @@ namespace MouseGame.Net
 
         public static readonly MapInfo[] Maps =
         {
-            new MapInfo { Scene = "Game_Kitchen",      NameKey = "map_day",   MatchSeconds = 150f, CatInterval = 5.0f, CatWarning = 1.5f },
-            new MapInfo { Scene = "Game_KitchenNight", NameKey = "map_night", MatchSeconds = 150f, CatInterval = 3.4f, CatWarning = 1.2f },
+            new MapInfo { Scene = "Game_Kitchen",      NameKey = "map_day",   MatchSeconds = 150f, CatInterval = 3.2f, CatWarning = 0.9f },
+            new MapInfo { Scene = "Game_KitchenNight", NameKey = "map_night", MatchSeconds = 150f, CatInterval = 2.4f, CatWarning = 0.7f },
         };
 
         // ---- gameplay tuning (shared by server and clients) ----
@@ -46,7 +46,9 @@ namespace MouseGame.Net
         public const float TrapSlowSeconds = 3.0f;
         public const float TrapArmDelay = 0.8f;        // owner can walk away before it arms
 
-        public const float CatStunSeconds = 1.2f;
+        public const float CatStunSeconds = 1.6f;
+        /// <summary>Chance that the cat aims at a zone where a mouse is standing (else a random zone).</summary>
+        public const float CatAimChance = 0.65f;
         public const float CountdownSeconds = 3f;
 
         public static readonly int[] FoodValueByTier = { 0, 1, 2, 4 };   // tier 1 floor, 2 fridge, 3 table

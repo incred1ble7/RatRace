@@ -212,7 +212,7 @@ namespace MouseGame
             if (Map.CatZones.Length == 0) return;
             if (strikeResolved && Now >= nextCatAt - Info.CatWarning)
             {
-                CatZone.Value = Random.Range(0, Map.CatZones.Length);
+                CatZone.Value = PickCatZone();
                 CatStrikeAt.Value = nextCatAt;
                 strikeResolved = false;
             }
@@ -228,6 +228,20 @@ namespace MouseGame
                 nextCatAt = Now + Info.CatInterval * Random.Range(0.8f, 1.2f);
             }
             if (strikeResolved && CatZone.Value >= 0 && Now > CatStrikeAt.Value + 0.8) CatZone.Value = -1;
+        }
+
+        /// <summary>Usually aims at a zone with a mouse in it (the warning still gives time to run).</summary>
+        int PickCatZone()
+        {
+            if (Random.value < GameConfig.CatAimChance)
+            {
+                var occupied = new List<int>();
+                for (int z = 0; z < Map.CatZones.Length; z++)
+                    foreach (var m in NetMouse.All)
+                        if (!m.IsStunned && Map.CatZones[z].Contains(m.transform.position)) { occupied.Add(z); break; }
+                if (occupied.Count > 0) return occupied[Random.Range(0, occupied.Count)];
+            }
+            return Random.Range(0, Map.CatZones.Length);
         }
 
         void HitByCat(NetMouse m, float groundY)
