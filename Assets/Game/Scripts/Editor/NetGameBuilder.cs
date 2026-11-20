@@ -165,6 +165,13 @@ namespace MouseGame.EditorTools
             earR.transform.localRotation = Quaternion.Euler(0, 0, -20);
             var tail = Prim(PrimitiveType.Capsule, cat, "Tail", new Vector3(1.5f, 0.5f, 0.9f), new Vector3(0.45f, 1.6f, 0.45f), dark);
             tail.transform.localRotation = Quaternion.Euler(0, 0, 70);
+            // the cat is solid: mice walk around it, not through it
+            var body = cat.gameObject.AddComponent<CapsuleCollider>();
+            body.direction = 1;
+            body.center = new Vector3(0f, 2.2f, 0.3f);
+            body.radius = 1.2f;
+            body.height = 4.4f;
+            tail.AddComponent<CapsuleCollider>();   // fits the capsule primitive, follows its scale/rotation
 
             // the striking paw (pivot = bottom of the pad)
             var paw = new GameObject("Paw").transform;

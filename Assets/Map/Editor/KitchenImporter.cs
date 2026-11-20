@@ -7,7 +7,8 @@ namespace MouseGame.EditorTools
 {
     /// <summary>
     /// Imports Assets/Map/Models/Kitchen.fbx with mobile-friendly settings and builds Kitchen.prefab:
-    ///   Kitchen_Visual  -> one static mesh, one material (1 draw call)
+    ///   Floor, Walls, Fridge, Table, Chair_L... -> separate objects, one shared material,
+    ///                      marked static so Unity batches them into a few draw calls
     ///   COL_*           -> BoxColliders only (renderer removed)
     ///   SPAWN/HOLE/FOOD/CATZONE/CAT empties -> gameplay marker components
     /// Menu: Tools/Map/Rebuild Kitchen Prefab. Re-export the FBX from Blender and it rebuilds itself.
@@ -90,7 +91,7 @@ namespace MouseGame.EditorTools
                 foreach (var t in inst.GetComponentsInChildren<Transform>(true).ToArray())
                 {
                     string n = t.name;
-                    if (n == "Kitchen_Visual")
+                    if (!n.StartsWith("COL_") && t.GetComponent<MeshRenderer>() != null)
                     {
                         var r = t.GetComponent<MeshRenderer>();
                         r.sharedMaterial = mat;
