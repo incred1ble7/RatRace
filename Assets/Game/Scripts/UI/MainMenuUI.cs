@@ -5,34 +5,35 @@ using UnityEngine.UI;
 
 namespace MouseGame.UI
 {
-    /// <summary>Main menu: name, Host, Join by IP, LAN server browser, language, quit.</summary>
     public class MainMenuUI : MonoBehaviour
     {
+        enum Page { Home, Multiplayer, HowTo }
+
+        Page page = Page.Home;
         Canvas canvas;
         InputField nameField, lobbyField, ipField;
         RectTransform list;
         Text status, browserTitle;
         float connectTimeout;
+        string pendingStatus;
+        Color pendingStatusColor;
 
         void Start()
         {
-            L10n.Changed += Rebuild;
-            Build();
+            if (LanDiscovery.Instance != null) LanDiscovery.Instance.ListChanged += RefreshList;
+
             if (!string.IsNullOrEmpty(ConnectionManager.PendingMenuMessage))
             {
-                SetStatus(L10n.T(ConnectionManager.PendingMenuMessage), UIKit.Bad);
+                pendingStatus = L10n.T(ConnectionManager.PendingMenuMessage);
+                pendingStatusColor = UIKit.Bad;
                 ConnectionManager.PendingMenuMessage = null;
+                page = Page.Multiplayer;
             }
-            if (LanDiscovery.Instance != null)
-            {
-                LanDiscovery.Instance.ListChanged += RefreshList;
-                LanDiscovery.Instance.Search();
-            }
+            Open(page);
         }
 
         void OnDestroy()
         {
-            L10n.Changed -= Rebuild;
             if (LanDiscovery.Instance != null)
             {
                 LanDiscovery.Instance.ListChanged -= RefreshList;
@@ -40,27 +41,74 @@ namespace MouseGame.UI
             }
         }
 
+        void Open(Page p)
+        {
+            page = p;
+            Rebuild();
+            if (page == Page.Multiplayer) LanDiscovery.Instance?.Search();
+            else LanDiscovery.Instance?.StopSearch();
+        }
+
         void Rebuild()
         {
             if (canvas != null) Destroy(canvas.gameObject);
-            Build();
-            RefreshList();
-        }
-
-        void Build()
-        {
+            list = null; status = null; browserTitle = null;
             canvas = UIKit.CreateCanvas("MainMenuCanvas", 0);
             var root = canvas.transform;
-            var bg = UIKit.Img(root, "Bg", new Color(0.16f, 0.12f, 0.10f, 1f), false);
-            bg.rectTransform.Anchor(0, 0, 1, 1);
+            UIKit.Img(root, "Bg", new Color(0.16f, 0.12f, 0.10f, 1f), false).rectTransform.Anchor(0, 0, 1, 1);
 
-            var title = UIKit.Label(root, L10n.T("title"), 84, TextAnchor.MiddleCenter, UIKit.Accent, FontStyle.Bold);
-            title.rectTransform.Anchor(0, 1, 1, 1, new Vector2(40, -150), new Vector2(-40, -30));
-            var sub = UIKit.Label(root, L10n.T("subtitle") + "   •   " + L10n.F("your_ip", LanDiscovery.LocalIPv4()), 32, TextAnchor.MiddleCenter, UIKit.DimText);
-            sub.rectTransform.Anchor(0, 1, 1, 1, new Vector2(40, -200), new Vector2(-40, -150));
+            switch (page)
+            {
+                case Page.Home: BuildHome(root); break;
+                case Page.Multiplayer: BuildMultiplayer(root); RefreshList(); break;
+                case Page.HowTo: BuildHowTo(root); break;
+            }
+            if (status != null && pendingStatus != null) { SetStatus(pendingStatus, pendingStatusColor); pendingStatus = null; }
+        }
 
-            // ---------------- left: player + host ----------------
-            var left = UIKit.PanelBox(root, "Left").rectTransform.Anchor(0.03f, 0.05f, 0.42f, 0.78f);
+        void BuildHome(Transform root)
+        {
+            var title = UIKit.Label(root, L10n.T("title"), 110, TextAnchor.MiddleCenter, UIKit.Accent, FontStyle.Bold);
+            title.rectTransform.Anchor(0, 0.68f, 1, 0.92f, new Vector2(40, 0), new Vector2(-40, 0));
+
+            var col = UIKit.Rect("Buttons", root);
+            col.Place(new Vector2(0.5f, 0.5f), new Vector2(0, -120), new Vector2(620, 400));
+            col.pivot = new Vector2(0.5f, 0.5f);
+            var vl = col.gameObject.AddComponent<VerticalLayoutGroup>();
+            vl.spacing = 24; vl.childControlHeight = true; vl.childControlWidth = true;
+            vl.childForceExpandHeight = false; vl.childForceExpandWidth = true;
+
+            var mp = UIKit.Btn(col, L10n.T("multiplayer"), () => Open(Page.Multiplayer), UIKit.Accent, 52);
+            mp.ButtonText().color = new Color(0.2f, 0.12f, 0.05f);
+            mp.Height(140);
+            UIKit.Btn(col, L10n.T("how_to_play"), () => Open(Page.HowTo), null, 42).Height(110);
+            UIKit.Btn(col, L10n.T("quit"), Application.Quit, UIKit.Bad, 36).Height(100);
+
+            var ver = UIKit.Label(root, "v" + Application.version, 24, TextAnchor.LowerRight, UIKit.DimText);
+            ver.rectTransform.Anchor(0.5f, 0, 1, 0, new Vector2(0, 16), new Vector2(-24, 56));
+        }
+
+        void BuildHowTo(Transform root)
+        {
+            BackButton(root);
+            var title = UIKit.Label(root, L10n.T("how_to_play"), 64, TextAnchor.MiddleCenter, UIKit.Accent, FontStyle.Bold);
+            title.rectTransform.Anchor(0, 1, 1, 1, new Vector2(300, -140), new Vector2(-300, -30));
+            var panel = UIKit.PanelBox(root, "Rules").rectTransform.Anchor(0.08f, 0.06f, 0.92f, 0.82f);
+            var text = UIKit.Label(panel, L10n.T("rules_text"), 36, TextAnchor.UpperLeft);
+            text.supportRichText = true;
+            text.lineSpacing = 1.15f;
+            text.rectTransform.Anchor(0, 0, 1, 1, new Vector2(50, 40), new Vector2(-50, -40));
+        }
+
+        void BuildMultiplayer(Transform root)
+        {
+            BackButton(root);
+            var title = UIKit.Label(root, L10n.T("multiplayer"), 64, TextAnchor.MiddleCenter, UIKit.Accent, FontStyle.Bold);
+            title.rectTransform.Anchor(0, 1, 1, 1, new Vector2(300, -120), new Vector2(-300, -24));
+            var sub = UIKit.Label(root, L10n.F("your_ip", LanDiscovery.LocalIPv4()), 30, TextAnchor.MiddleCenter, UIKit.DimText);
+            sub.rectTransform.Anchor(0, 1, 1, 1, new Vector2(40, -170), new Vector2(-40, -120));
+
+            var left = UIKit.PanelBox(root, "Left").rectTransform.Anchor(0.03f, 0.05f, 0.42f, 0.82f);
             float y = -30f;
             Caption(left, L10n.T("your_name"), ref y);
             nameField = UIKit.Field(left, L10n.T("your_name"), ConnectionManager.PlayerName, 38, 16);
@@ -87,8 +135,7 @@ namespace MouseGame.UI
             jr.anchorMin = new Vector2(1, 1); jr.anchorMax = new Vector2(1, 1); jr.pivot = new Vector2(1, 1);
             jr.sizeDelta = new Vector2(230, 90); jr.anchoredPosition = new Vector2(-30, ipRt.anchoredPosition.y);
 
-            // ---------------- right: server browser ----------------
-            var right = UIKit.PanelBox(root, "Right").rectTransform.Anchor(0.44f, 0.05f, 0.97f, 0.78f);
+            var right = UIKit.PanelBox(root, "Right").rectTransform.Anchor(0.44f, 0.05f, 0.97f, 0.82f);
             browserTitle = UIKit.Label(right, L10n.T("servers"), 36, TextAnchor.MiddleLeft, UIKit.Accent, FontStyle.Bold);
             browserTitle.rectTransform.Anchor(0, 1, 1, 1, new Vector2(30, -90), new Vector2(-280, -20));
             var refresh = UIKit.Btn(right, L10n.T("refresh"), () => LanDiscovery.Instance?.Search(), null, 32);
@@ -96,14 +143,14 @@ namespace MouseGame.UI
             list = UIKit.ScrollList(right, "Servers", out _, 10f);
             ((RectTransform)list.parent.parent).Anchor(0, 0, 1, 1, new Vector2(30, 140), new Vector2(-30, -110));
 
-            // ---------------- bottom bar ----------------
             status = UIKit.Label(right, "", 30, TextAnchor.MiddleLeft, UIKit.DimText);
             status.rectTransform.Anchor(0, 0, 1, 0, new Vector2(30, 30), new Vector2(-30, 120));
+        }
 
-            var lang = UIKit.Btn(root, L10n.T("language"), L10n.Next, null, 28);
-            ((RectTransform)lang.transform).Place(new Vector2(0, 1), new Vector2(30, -30), new Vector2(330, 70));
-            var quit = UIKit.Btn(root, L10n.T("quit"), Application.Quit, UIKit.Bad, 28);
-            ((RectTransform)quit.transform).Place(new Vector2(1, 1), new Vector2(-30, -30), new Vector2(200, 70));
+        void BackButton(Transform root)
+        {
+            var back = UIKit.Btn(root, "< " + L10n.T("back"), () => Open(Page.Home), null, 32);
+            ((RectTransform)back.transform).Place(new Vector2(0, 1), new Vector2(30, -30), new Vector2(240, 80));
         }
 
         static void Caption(RectTransform parent, string text, ref float y)
@@ -177,7 +224,10 @@ namespace MouseGame.UI
 
         void Update()
         {
-            // a failed connection attempt: NGO shuts down by itself; show the error once
+#if ENABLE_INPUT_SYSTEM
+            var kb = UnityEngine.InputSystem.Keyboard.current;
+            if (page != Page.Home && kb != null && kb.escapeKey.wasPressedThisFrame) Open(Page.Home);
+#endif
             var nm = Unity.Netcode.NetworkManager.Singleton;
             if (connectTimeout > 0f && nm != null && !nm.IsListening && !nm.ShutdownInProgress)
             {

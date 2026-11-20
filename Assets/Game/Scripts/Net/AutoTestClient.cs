@@ -5,12 +5,6 @@ using UnityEngine.SceneManagement;
 
 namespace MouseGame.Net
 {
-    /// <summary>
-    /// Test bot for multiplayer checks, enabled only with command-line args:
-    ///   -autojoin 127.0.0.1   join that host from the main menu
-    ///   -autolog  path.txt    write progress to a file
-    /// In the lobby it presses Ready and chats; in a match it fetches food and carries it home.
-    /// </summary>
     public class AutoTestClient : MonoBehaviour
     {
         string ip, logPath;
@@ -77,7 +71,6 @@ namespace MouseGame.Net
             }
         }
 
-        // ---- very simple bot: floor food only, 2 pieces, then home
         void Drive(NetMouse me, MatchManager mm)
         {
             Vector3 target;
@@ -100,7 +93,6 @@ namespace MouseGame.Net
                 if (bd < GameConfig.PickupRadius * 0.8f) GameInput.PressTake();
             }
             Vector3 dir = target - me.transform.position; dir.y = 0f;
-            // camera looks along +Z with no yaw, so world XZ == joystick XY
             GameInput.BotMove = dir.magnitude < 0.05f ? Vector2.zero : new Vector2(dir.x, dir.z).normalized;
         }
     }

@@ -2,7 +2,6 @@ using UnityEngine;
 
 namespace MouseGame
 {
-    /// <summary>Player spawn. Index matches the paired MouseHole (player slot 1..4).</summary>
     public class SpawnPoint : MonoBehaviour
     {
         public int index = 1;

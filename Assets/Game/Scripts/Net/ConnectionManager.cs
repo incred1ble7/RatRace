@@ -7,11 +7,6 @@ using UnityEngine.SceneManagement;
 
 namespace MouseGame.Net
 {
-    /// <summary>
-    /// Lives on the NetworkManager object (Boot scene, never destroyed).
-    /// Host / Join / Leave, connection approval (name, max players, no joining mid-match),
-    /// registers network prefabs and spawns the persistent SessionManager.
-    /// </summary>
     [RequireComponent(typeof(NetworkManager))]
     public class ConnectionManager : MonoBehaviour
     {
@@ -40,7 +35,6 @@ namespace MouseGame.Net
             set => PlayerPrefs.SetString("lobby_name", value ?? "");
         }
 
-        /// <summary>Message to show in the main menu after returning there (disconnect reason etc.).</summary>
         public static string PendingMenuMessage;
 
         public event Action<string> ConnectFailed;
@@ -77,7 +71,6 @@ namespace MouseGame.Net
 
         UnityTransport Transport => nm.GetComponent<UnityTransport>();
 
-        // ---------------------------------------------------------------
         public bool Host()
         {
             Transport.SetConnectionData("0.0.0.0", GameConfig.GamePort, "0.0.0.0");
@@ -103,10 +96,8 @@ namespace MouseGame.Net
             return true;
         }
 
-        /// <summary>Leave the session (host closes it for everyone) and go to the main menu.</summary>
         public void Leave(string reasonKey = null)
         {
-            // already in the menu (failed connect): the menu shows the reason itself
             PendingMenuMessage = SceneManager.GetActiveScene().name == GameConfig.MenuScene ? null : reasonKey;
             LanDiscovery.Instance?.StopHosting();
             if (nm.IsListening) nm.Shutdown();
@@ -114,7 +105,6 @@ namespace MouseGame.Net
                 SceneManager.LoadScene(GameConfig.MenuScene);
         }
 
-        // ---------------------------------------------------------------
         void OnServerStarted()
         {
             var session = Instantiate(sessionPrefab);
@@ -141,12 +131,10 @@ namespace MouseGame.Net
             PendingNames[req.ClientNetworkId] = name;
         }
 
-        /// <summary>Names from approval, picked up by SessionManager when the client is connected.</summary>
         public static readonly System.Collections.Generic.Dictionary<ulong, string> PendingNames = new System.Collections.Generic.Dictionary<ulong, string>();
 
         void OnClientDisconnect(ulong clientId)
         {
-            // this callback on a client means *we* lost the connection
             if (nm.IsServer) return;
             if (clientId != nm.LocalClientId && clientId != NetworkManager.ServerClientId) return;
             string reason = nm.DisconnectReason;

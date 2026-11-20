@@ -4,10 +4,6 @@ using UnityEngine;
 
 namespace MouseGame.EditorTools
 {
-    /// <summary>
-    /// Mobile-friendly import settings for everything in Assets/Mouse.
-    /// Applied automatically on import; after the first import the prefab is built once.
-    /// </summary>
     public class MouseAssetPostprocessor : AssetPostprocessor
     {
         public const string RootFolder = "Assets/Mouse/";
@@ -15,8 +11,6 @@ namespace MouseGame.EditorTools
         public const string CheeseFbx = RootFolder + "Models/Cheese.fbx";
         public const string TextureFolder = RootFolder + "Textures/";
 
-        // Path of the food socket inside the model (relative to the model root).
-        // MousePrefabBuilder verifies it against the real hierarchy and fixes it if needed.
         public const string DefaultSocketPath = "MouseRig/Root/Body/Spine/Food_Socket";
 
         static readonly HashSet<string> LoopingClips = new HashSet<string> { "Idle", "Run", "Carry" };
@@ -30,24 +24,23 @@ namespace MouseGame.EditorTools
             if (!IsOurModel) return;
             var mi = (ModelImporter)assetImporter;
 
-            // ---- shared mesh settings ----------------------------------------
             mi.useFileScale = true;
             mi.globalScale = 1f;
-            mi.bakeAxisConversion = true;           // no -90° X rotation on the root
-            mi.preserveHierarchy = true;            // deterministic paths (MouseRig/...)
+            mi.bakeAxisConversion = true;
+            mi.preserveHierarchy = true;
             mi.importCameras = false;
             mi.importLights = false;
             mi.importVisibility = false;
             mi.importBlendShapes = false;
-            mi.isReadable = false;                  // no CPU copy of the mesh -> less RAM
+            mi.isReadable = false;
             mi.meshCompression = ModelImporterMeshCompression.Medium;
             mi.optimizeMeshPolygons = true;
             mi.optimizeMeshVertices = true;
-            mi.importNormals = ModelImporterNormals.Import;   // flat low-poly normals from Blender
-            mi.importTangents = ModelImporterTangents.None;   // no normal maps -> no tangents
+            mi.importNormals = ModelImporterNormals.Import;
+            mi.importTangents = ModelImporterTangents.None;
             mi.generateSecondaryUV = false;
             mi.addCollider = false;
-            mi.materialImportMode = ModelImporterMaterialImportMode.None; // material comes from M_Mouse
+            mi.materialImportMode = ModelImporterMaterialImportMode.None;
 
             if (assetPath != MouseFbx)
             {
@@ -56,13 +49,12 @@ namespace MouseGame.EditorTools
                 return;
             }
 
-            // ---- rig / animation (mouse only) --------------------------------
             mi.animationType = ModelImporterAnimationType.Generic;
             mi.avatarSetup = ModelImporterAvatarSetup.CreateFromThisModel;
             mi.skinWeights = ModelImporterSkinWeights.Custom;
-            mi.maxBonesPerVertex = 2;               // matches SkinQuality.Bone2 on the renderer
+            mi.maxBonesPerVertex = 2;
             mi.minBoneWeight = 0.01f;
-            mi.optimizeGameObjects = true;          // bones are not GameObjects at runtime
+            mi.optimizeGameObjects = true;
             if (mi.extraExposedTransformPaths == null || mi.extraExposedTransformPaths.Length == 0)
                 mi.extraExposedTransformPaths = new[] { DefaultSocketPath };
 
@@ -79,7 +71,6 @@ namespace MouseGame.EditorTools
             if (assetPath != MouseFbx) return;
             var mi = (ModelImporter)assetImporter;
 
-            // Blender names takes "MouseRig|Idle" -> rename to "Idle", set looping.
             var clips = new List<ModelImporterClipAnimation>();
             foreach (var c in mi.defaultClipAnimations)
             {
@@ -89,7 +80,7 @@ namespace MouseGame.EditorTools
                 c.name = n;
                 bool loop = LoopingClips.Contains(n);
                 c.loopTime = loop;
-                c.loopPose = false;               // clips are authored seamless already
+                c.loopPose = false;
                 c.wrapMode = loop ? WrapMode.Loop : WrapMode.Once;
                 clips.Add(c);
             }
@@ -100,7 +91,6 @@ namespace MouseGame.EditorTools
         {
             if (!assetPath.StartsWith(TextureFolder)) return;
             var ti = (TextureImporter)assetImporter;
-            // 64x8 colour palette: tiny, exact colours, no mips.
             ti.textureType = TextureImporterType.Default;
             ti.sRGBTexture = true;
             ti.alphaSource = TextureImporterAlphaSource.None;
@@ -109,7 +99,7 @@ namespace MouseGame.EditorTools
             ti.wrapMode = TextureWrapMode.Clamp;
             ti.npotScale = TextureImporterNPOTScale.None;
             ti.isReadable = false;
-            ti.textureCompression = TextureImporterCompression.Uncompressed; // 1.5 KB, compression would smear colours
+            ti.textureCompression = TextureImporterCompression.Uncompressed;
             ti.maxTextureSize = 64;
         }
 

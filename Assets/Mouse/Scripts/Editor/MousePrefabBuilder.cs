@@ -7,10 +7,6 @@ using UnityEngine.Rendering;
 
 namespace MouseGame.EditorTools
 {
-    /// <summary>
-    /// Builds Mouse.prefab, Cheese.prefab, M_Mouse material, the Animator Controller and the carry mask.
-    /// Menu: Tools/Mouse/Rebuild Prefab. Safe to run again (assets are overwritten).
-    /// </summary>
     public static class MousePrefabBuilder
     {
         const string Root = MouseAssetPostprocessor.RootFolder;
@@ -21,7 +17,6 @@ namespace MouseGame.EditorTools
         public const string MousePrefabPath = Root + "Prefabs/Mouse.prefab";
         const string CheesePrefabPath = Root + "Prefabs/Cheese.prefab";
 
-        // Bones driven by the Carry layer (everything else keeps playing Idle/Run).
         static readonly string[] CarryBones = { "Head", "Leg_FL", "Leg_FR" };
 
         [MenuItem("Tools/Mouse/Rebuild Prefab")]
@@ -46,7 +41,7 @@ namespace MouseGame.EditorTools
                 }
             }
 
-            if (!EnsureSocketExposed(clips["Run"])) return; // re-import triggered; Build runs again after it
+            if (!EnsureSocketExposed(clips["Run"])) return;
 
             var material = CreateMaterial();
             var mask = CreateCarryMask(clips["Carry"]);
@@ -58,9 +53,6 @@ namespace MouseGame.EditorTools
             if (verbose) Debug.Log($"[Mouse] Prefab built: {MousePrefabPath}");
         }
 
-        // ------------------------------------------------------------------
-        // Socket exposure: optimizeGameObjects hides bones, the socket must be exposed by path.
-        // ------------------------------------------------------------------
         static bool EnsureSocketExposed(AnimationClip anyClip)
         {
             string spinePath = AnimationUtility.GetCurveBindings(anyClip)
@@ -83,7 +75,6 @@ namespace MouseGame.EditorTools
             return false;
         }
 
-        // ------------------------------------------------------------------
         static Material CreateMaterial()
         {
             var tex = AssetDatabase.LoadAssetAtPath<Texture2D>(TexturePath);
@@ -127,10 +118,8 @@ namespace MouseGame.EditorTools
             return Shader.Find("Standard");
         }
 
-        // ------------------------------------------------------------------
         static AvatarMask CreateCarryMask(AnimationClip carry)
         {
-            // All bone paths come from the clip itself, so the mask always matches the hierarchy.
             var paths = new SortedSet<string>();
             foreach (var b in AnimationUtility.GetCurveBindings(carry))
             {
@@ -145,7 +134,6 @@ namespace MouseGame.EditorTools
 
             AssetDatabase.DeleteAsset(MaskPath);
             var mask = new AvatarMask { name = "AM_Mouse_Carry" };
-            // Humanoid body parts are irrelevant for a Generic rig; disable them.
             for (int i = 0; i < (int)AvatarMaskBodyPart.LastBodyPart; i++)
                 mask.SetHumanoidBodyPartActive((AvatarMaskBodyPart)i, false);
 
@@ -161,7 +149,6 @@ namespace MouseGame.EditorTools
             return mask;
         }
 
-        // ------------------------------------------------------------------
         static AnimatorController CreateController(Dictionary<string, AnimationClip> clips, AvatarMask mask)
         {
             AssetDatabase.DeleteAsset(ControllerPath);
@@ -172,7 +159,6 @@ namespace MouseGame.EditorTools
                 name = "RunSpeed", type = AnimatorControllerParameterType.Float, defaultFloat = 1f
             });
 
-            // Base layer: Idle <-> Run by Speed
             var sm = ac.layers[0].stateMachine;
             var idle = sm.AddState("Idle", new Vector3(300, 0));
             idle.motion = clips["Idle"];
@@ -192,7 +178,6 @@ namespace MouseGame.EditorTools
             toIdle.duration = 0.15f;
             toIdle.AddCondition(AnimatorConditionMode.Less, 0.05f, "Speed");
 
-            // Carry layer: override paws + head, weight driven by MouseVisual (0..1)
             var carrySm = new AnimatorStateMachine { name = "Carry", hideFlags = HideFlags.HideInHierarchy };
             AssetDatabase.AddObjectToAsset(carrySm, ac);
             var carry = carrySm.AddState("Carry", new Vector3(300, 0));
@@ -213,7 +198,6 @@ namespace MouseGame.EditorTools
             return ac;
         }
 
-        // ------------------------------------------------------------------
         static void BuildMousePrefab(Material mat, AnimatorController controller)
         {
             var model = AssetDatabase.LoadAssetAtPath<GameObject>(MouseAssetPostprocessor.MouseFbx);
@@ -222,14 +206,13 @@ namespace MouseGame.EditorTools
             {
                 var inst = (GameObject)PrefabUtility.InstantiatePrefab(model, root.transform);
                 inst.name = "Model";
-                // The exported mesh faces -Z; turn it so the prefab root faces +Z (Unity forward).
                 inst.transform.localRotation = Quaternion.Euler(0f, 180f, 0f);
 
                 var animator = inst.GetComponent<Animator>();
                 if (animator == null) animator = inst.AddComponent<Animator>();
                 animator.runtimeAnimatorController = controller;
                 animator.applyRootMotion = false;
-                animator.cullingMode = AnimatorCullingMode.CullUpdateTransforms; // no skinning when off-screen
+                animator.cullingMode = AnimatorCullingMode.CullUpdateTransforms;
                 animator.updateMode = AnimatorUpdateMode.Normal;
 
                 foreach (var smr in inst.GetComponentsInChildren<SkinnedMeshRenderer>(true))
@@ -272,7 +255,7 @@ namespace MouseGame.EditorTools
                 {
                     r.sharedMaterial = mat;
                     r.lightProbeUsage = LightProbeUsage.Off;
-                    r.shadowCastingMode = ShadowCastingMode.Off; // tiny moving food: no shadow pass
+                    r.shadowCastingMode = ShadowCastingMode.Off;
                     r.reflectionProbeUsage = ReflectionProbeUsage.Off;
                 }
                 PrefabUtility.SaveAsPrefabAsset(inst, CheesePrefabPath);
@@ -283,7 +266,6 @@ namespace MouseGame.EditorTools
             }
         }
 
-        // ------------------------------------------------------------------
         static Transform FindDeep(Transform t, string name)
         {
             if (t.name == name) return t;

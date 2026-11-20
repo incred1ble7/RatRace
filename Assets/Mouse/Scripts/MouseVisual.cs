@@ -2,11 +2,6 @@ using UnityEngine;
 
 namespace MouseGame
 {
-    /// <summary>
-    /// Visual-only controller for the mouse prefab.
-    /// Gameplay code calls SetSpeed() every frame and PickUp()/Drop() for food.
-    /// Movement itself (CharacterController / NavMesh / Rigidbody) stays in your gameplay code.
-    /// </summary>
     [DisallowMultipleComponent]
     public class MouseVisual : MonoBehaviour
     {
@@ -42,7 +37,6 @@ namespace MouseGame
             if (animator != null) carryLayer = animator.GetLayerIndex("Carry");
         }
 
-        /// <summary>Current horizontal movement speed in m/s. 0 = Idle.</summary>
         public void SetSpeed(float metersPerSecond)
         {
             if (animator == null) return;
@@ -51,7 +45,6 @@ namespace MouseGame
             animator.SetFloat(RunSpeedId, Mathf.Clamp(k, runPlaybackClamp.x, runPlaybackClamp.y));
         }
 
-        /// <summary>Attach a food object to the paws. Its pivot is placed at the socket.</summary>
         public void PickUp(Transform food)
         {
             if (food == null || foodSocket == null) return;
@@ -68,7 +61,6 @@ namespace MouseGame
             food.rotation = transform.rotation * Quaternion.Euler(foodRotationOffset);
         }
 
-        /// <summary>Detach the carried food (stays in the world where it is). Returns it.</summary>
         public Transform Drop()
         {
             var food = carried;

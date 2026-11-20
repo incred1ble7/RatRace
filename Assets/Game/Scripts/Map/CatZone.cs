@@ -2,7 +2,6 @@ using UnityEngine;
 
 namespace MouseGame
 {
-    /// <summary>Area the cat slaps with its paw. Gameplay reads radius; visual ring is baked into the map.</summary>
     public class CatZone : MonoBehaviour
     {
         public int index = 1;
@@ -11,7 +10,7 @@ namespace MouseGame
         public bool Contains(Vector3 worldPos)
         {
             Vector3 d = worldPos - transform.position;
-            if (Mathf.Abs(d.y) > 1f) return false;     // different floor level (e.g. under the table)
+            if (Mathf.Abs(d.y) > 1f) return false;
             d.y = 0f;
             return d.sqrMagnitude <= radius * radius;
         }

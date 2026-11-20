@@ -2,7 +2,6 @@ using UnityEngine;
 
 namespace MouseGame
 {
-    /// <summary>Where food can appear. Tier: 1 floor, 2 fridge, 3 table (premium, under the cat's paw).</summary>
     public class FoodSpawnPoint : MonoBehaviour
     {
         [Range(1, 3)] public int tier = 1;

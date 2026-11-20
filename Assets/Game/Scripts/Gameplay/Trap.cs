@@ -4,18 +4,14 @@ using UnityEngine;
 
 namespace MouseGame
 {
-    /// <summary>
-    /// Mousetrap thrown by a player. One per player (placing a new one removes the old).
-    /// Server: the first *other* mouse that steps on it is slowed, then the trap disappears.
-    /// </summary>
     public class Trap : NetworkBehaviour
     {
         public readonly NetworkVariable<ulong> OwnerPlayer = new NetworkVariable<ulong>();
         public readonly NetworkVariable<int> OwnerSlot = new NetworkVariable<int>(1);
         public readonly NetworkVariable<double> ArmedAt = new NetworkVariable<double>(double.MaxValue);
 
-        [SerializeField] Transform bar;          // snapping bar (visual)
-        [SerializeField] Renderer tint;          // coloured marker
+        [SerializeField] Transform bar;
+        [SerializeField] Renderer tint;
         [SerializeField] Material[] slotMaterials;
 
         bool fired;
@@ -36,7 +32,6 @@ namespace MouseGame
         {
             if (bar != null)
             {
-                // armed: bar open (back); not yet armed: bar wobbles slightly
                 bool armed = NetworkManager != null && NetworkManager.ServerTime.Time >= ArmedAt.Value;
                 float ang = armed ? -70f : -70f + Mathf.Sin(Time.time * 20f) * 6f;
                 bar.localRotation = Quaternion.Euler(ang, 0f, 0f);

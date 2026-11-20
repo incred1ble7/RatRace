@@ -7,11 +7,6 @@ namespace MouseGame
 {
     public enum MatchState : byte { Countdown, Playing, Ended }
 
-    /// <summary>
-    /// One match on a map. Spawned by the server after every client loaded the level.
-    /// Server: spawns mice, food, runs the timer, scoring, the cat and traps.
-    /// Clients: read the synced state; the cat is animated locally from synced timings (cheap on the network).
-    /// </summary>
     public class MatchManager : NetworkBehaviour
     {
         public static MatchManager Instance { get; private set; }
@@ -19,7 +14,6 @@ namespace MouseGame
         public readonly NetworkVariable<MatchState> State = new NetworkVariable<MatchState>(MatchState.Countdown);
         public readonly NetworkVariable<double> StartTime = new NetworkVariable<double>();
         public readonly NetworkVariable<double> EndTime = new NetworkVariable<double>();
-        // cat: which zone is targeted and when the paw lands (server time)
         public readonly NetworkVariable<int> CatZone = new NetworkVariable<int>(-1);
         public readonly NetworkVariable<double> CatStrikeAt = new NetworkVariable<double>();
 
@@ -34,7 +28,6 @@ namespace MouseGame
         public KitchenMap Map { get; private set; }
         public MapInfo Info { get; private set; }
 
-        // server state
         readonly Dictionary<ulong, Trap> trapByPlayer = new Dictionary<ulong, Trap>();
         readonly List<(int point, double at)> respawnQueue = new List<(int, double)>();
         readonly HashSet<int> occupiedPoints = new HashSet<int>();
@@ -59,7 +52,6 @@ namespace MouseGame
             if (Instance == this) Instance = null;
         }
 
-        // ================================================================ server
         void ServerSetup()
         {
             var session = SessionManager.Instance;
@@ -69,7 +61,6 @@ namespace MouseGame
             State.Value = MatchState.Countdown;
             nextCatAt = StartTime.Value + Info.CatInterval;
 
-            // players
             for (int i = 0; i < session.Players.Count; i++)
             {
                 var p = session.Players[i];
@@ -78,10 +69,9 @@ namespace MouseGame
                 var go = Instantiate(cm.playerPrefab, sp.position, sp.rotation);
                 var mouse = go.GetComponent<NetMouse>();
                 go.GetComponent<NetworkObject>().SpawnAsPlayerObject(p.ClientId, true);
-                mouse.Slot.Value = p.Slot;   // network values are written after spawn
+                mouse.Slot.Value = p.Slot;
             }
 
-            // food on every spawn point
             for (int i = 0; i < Map.FoodPoints.Length; i++) SpawnFoodAtPoint(i);
         }
 
@@ -121,7 +111,6 @@ namespace MouseGame
             SetInput(false);
         }
 
-        // ---- delivery: carried food counts only inside the player's own hole
         void ServerDeliveries()
         {
             var session = SessionManager.Instance;
@@ -130,7 +119,7 @@ namespace MouseGame
                 if (m.CarriedCount.Value <= 0) continue;
                 var hole = Map.GetHole(m.Slot.Value);
                 if (hole == null) continue;
-                Vector3 target = hole.transform.position + hole.transform.forward * 0.3f;   // right at the entrance
+                Vector3 target = hole.transform.position + hole.transform.forward * 0.3f;
                 Vector3 d = m.transform.position - target;
                 if (Mathf.Abs(d.y) > 0.6f) continue;
                 d.y = 0f;
@@ -142,7 +131,6 @@ namespace MouseGame
             }
         }
 
-        // ---- food
         void SpawnFoodAtPoint(int index)
         {
             var fp = Map.FoodPoints[index];
@@ -182,12 +170,11 @@ namespace MouseGame
             }
         }
 
-        // ---- traps
         public void PlaceTrap(NetMouse owner, Vector3 pos)
         {
             if (!IsPlaying) return;
             if (trapByPlayer.TryGetValue(owner.OwnerClientId, out var old) && old != null && old.IsSpawned)
-                old.NetworkObject.Despawn(true);      // only one trap per player
+                old.NetworkObject.Despawn(true);
             var go = Instantiate(ConnectionManager.Instance.trapPrefab, pos, Quaternion.Euler(0f, owner.transform.eulerAngles.y, 0f));
             var t = go.GetComponent<Trap>();
             go.GetComponent<NetworkObject>().Spawn(true);
@@ -206,7 +193,6 @@ namespace MouseGame
             trap.NetworkObject.Despawn(true);
         }
 
-        // ---- the cat: warn -> strike on one marked zone; mice inside are stunned and drop half their food
         void ServerCat()
         {
             if (Map.CatZones.Length == 0) return;
@@ -230,7 +216,6 @@ namespace MouseGame
             if (strikeResolved && CatZone.Value >= 0 && Now > CatStrikeAt.Value + 0.8) CatZone.Value = -1;
         }
 
-        /// <summary>Usually aims at a zone with a mouse in it (the warning still gives time to run).</summary>
         int PickCatZone()
         {
             if (Random.value < GameConfig.CatAimChance)
@@ -254,7 +239,6 @@ namespace MouseGame
                 int lostValue = Mathf.Max(lose, Mathf.RoundToInt(value * (float)lose / count));
                 m.CarriedCount.Value = count - lose;
                 m.CarriedValue.Value = Mathf.Max(0, value - lostValue);
-                // scatter the dropped food around the mouse (other players can grab it)
                 for (int i = 0; i < lose; i++)
                 {
                     int v = lostValue / lose + (i < lostValue % lose ? 1 : 0);
@@ -268,7 +252,6 @@ namespace MouseGame
             m.NotifyRpc("cat_hit", lose);
         }
 
-        // ================================================================ cat visuals (every client)
         void UpdateCatVisuals()
         {
             if (Map == null || paw == null) return;
@@ -281,7 +264,7 @@ namespace MouseGame
             }
             var zone = Map.CatZones[zi];
             Vector3 c = zone.transform.position;
-            float t = (float)(CatStrikeAt.Value - Now);          // >0 before the strike
+            float t = (float)(CatStrikeAt.Value - Now);
 
             if (warningDisc != null)
             {
@@ -290,7 +273,6 @@ namespace MouseGame
                 warningDisc.transform.localScale = new Vector3(zone.radius * 2f, 0.01f, zone.radius * 2f);
             }
 
-            // paw hovers high, slams down at strike time, then lifts
             float h;
             if (t > 0.12f) h = Mathf.Lerp(2.2f, 3.4f, Mathf.Clamp01((t - 0.12f) / 1.0f));
             else if (t > 0f) h = Mathf.Lerp(0f, 2.2f, t / 0.12f);
@@ -300,7 +282,6 @@ namespace MouseGame
         }
     }
 
-    /// <summary>Server helper called when a level finished loading for everybody.</summary>
     public static class MatchSpawner
     {
         public static void SpawnMatch(SessionManager session)

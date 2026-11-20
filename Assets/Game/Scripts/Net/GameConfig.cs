@@ -2,14 +2,13 @@ using UnityEngine;
 
 namespace MouseGame.Net
 {
-    /// <summary>A playable level. Scene must be in Build Settings.</summary>
     public sealed class MapInfo
     {
         public string Scene;
-        public string NameKey;          // L10n key
+        public string NameKey;
         public float MatchSeconds;
-        public float CatInterval;       // seconds between paw strikes
-        public float CatWarning;        // seconds the zone blinks before the strike
+        public float CatInterval;
+        public float CatWarning;
     }
 
     public static class GameConfig
@@ -28,13 +27,12 @@ namespace MouseGame.Net
             new MapInfo { Scene = "Game_KitchenNight", NameKey = "map_night", MatchSeconds = 150f, CatInterval = 2.4f, CatWarning = 0.7f },
         };
 
-        // ---- gameplay tuning (shared by server and clients) ----
         public const float MoveSpeed = 2.2f;
-        public const float CarrySlowPerItem = 0.09f;   // -9% speed per carried item
+        public const float CarrySlowPerItem = 0.09f;
         public const float CarryMinSpeedFactor = 0.45f;
         public const int MaxCarry = 8;
         public const float PickupRadius = 0.6f;
-        public const float DeliverRadius = 0.75f;   // must reach the burrow entrance to hand in food
+        public const float DeliverRadius = 0.75f;
 
         public const float DashSpeedMultiplier = 2.6f;
         public const float DashDuration = 0.22f;
@@ -44,21 +42,20 @@ namespace MouseGame.Net
         public const float TrapRadius = 0.45f;
         public const float TrapSlowFactor = 0.4f;
         public const float TrapSlowSeconds = 3.0f;
-        public const float TrapArmDelay = 0.8f;        // owner can walk away before it arms
+        public const float TrapArmDelay = 0.8f;
 
         public const float CatStunSeconds = 1.6f;
-        /// <summary>Chance that the cat aims at a zone where a mouse is standing (else a random zone).</summary>
         public const float CatAimChance = 0.65f;
         public const float CountdownSeconds = 3f;
 
-        public static readonly int[] FoodValueByTier = { 0, 1, 2, 4 };   // tier 1 floor, 2 fridge, 3 table
+        public static readonly int[] FoodValueByTier = { 0, 1, 2, 4 };
 
         public static readonly Color[] SlotColors =
         {
-            new Color(0.95f, 0.35f, 0.30f), // 1 red
-            new Color(0.30f, 0.60f, 0.98f), // 2 blue
-            new Color(0.35f, 0.85f, 0.40f), // 3 green
-            new Color(0.98f, 0.80f, 0.25f), // 4 yellow
+            new Color(0.95f, 0.35f, 0.30f),
+            new Color(0.30f, 0.60f, 0.98f),
+            new Color(0.35f, 0.85f, 0.40f),
+            new Color(0.98f, 0.80f, 0.25f),
         };
 
         public static Color SlotColor(int slot) => SlotColors[Mathf.Clamp(slot - 1, 0, SlotColors.Length - 1)];
