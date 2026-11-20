@@ -375,10 +375,10 @@ def build():
             b.box((lx, ly, 0), (lx + leg, ly + leg, top_z0), "wood_dark", skip=("pz",))
             col_box(f"Table_Leg_{lx:.0f}_{ly:.0f}", (lx, ly, 0), (lx + leg, ly + leg, top_z0))
 
-    # cat paw danger zones on the table (red rings) + markers
+    # cat zone markers (used as extra random strike points)
     zones = [(-2.4, 0.0, 1.1), (0.0, 0.0, 1.1), (2.4, 0.0, 1.1)]
     for i, (zx, zy, zr) in enumerate(zones, 1):
-        b.ring((zx, zy), zr - 0.12, zr, T["top"] + 0.006, "danger")
+        pass
         marker(f"CATZONE_{i}", (zx, zy, T["top"]), scale=zr)
     marker("CAT", (0.0, 4.0, 0.0), rot_z=math.radians(180))
 

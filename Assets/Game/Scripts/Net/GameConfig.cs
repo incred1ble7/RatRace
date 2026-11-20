@@ -9,6 +9,7 @@ namespace MouseGame.Net
         public float MatchSeconds;
         public float CatInterval;
         public float CatWarning;
+        public float ComboChance;
     }
 
     public static class GameConfig
@@ -23,8 +24,8 @@ namespace MouseGame.Net
 
         public static readonly MapInfo[] Maps =
         {
-            new MapInfo { Scene = "Game_Kitchen",      NameKey = "map_day",   MatchSeconds = 150f, CatInterval = 3.2f, CatWarning = 0.9f },
-            new MapInfo { Scene = "Game_KitchenNight", NameKey = "map_night", MatchSeconds = 150f, CatInterval = 2.4f, CatWarning = 0.7f },
+            new MapInfo { Scene = "Game_Kitchen",      NameKey = "map_day",   MatchSeconds = 150f, CatInterval = 2.9f, CatWarning = 0.85f, ComboChance = 0.2f },
+            new MapInfo { Scene = "Game_KitchenNight", NameKey = "map_night", MatchSeconds = 150f, CatInterval = 2.3f, CatWarning = 0.72f, ComboChance = 0.35f },
         };
 
         public const float MoveSpeed = 2.2f;
@@ -45,7 +46,13 @@ namespace MouseGame.Net
         public const float TrapArmDelay = 0.8f;
 
         public const float CatStunSeconds = 1.6f;
-        public const float CatAimChance = 0.65f;
+        public const float CatAimChance = 0.8f;
+        public const float CatPawRadius = 1.0f;
+        public const float CatSafeHoleRadius = 1.8f;
+        public const float CatEndIntervalFactor = 0.65f;
+        public const float CatEndWarningFactor = 0.8f;
+        public const float CatMinWarning = 0.5f;
+        public const float CatGraceSeconds = 1.0f;
         public const float CountdownSeconds = 3f;
 
         public static readonly int[] FoodValueByTier = { 0, 1, 2, 4 };

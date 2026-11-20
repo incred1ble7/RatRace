@@ -36,9 +36,11 @@ namespace MouseGame.UI
                 "• Points only count for food <b>delivered to your own burrow</b> (the hole in your colour).\n" +
                 "• <b>Dash</b> — a short burst of speed to escape. Has a cooldown.\n" +
                 "• <b>Trap</b> — dropped behind you, slows a rival. Only one at a time.\n" +
-                "• The <b>cat</b> slams its paw on the red zones on the table. The zone blinks first — run! " +
-                "A hit mouse is stunned and drops half its food for others to grab.\n\n" +
-                "The best food is on the table, under the cat's paw. Bank a little now or risk it for more?",
+                "• The <b>cat</b> strikes with both paws anywhere in the kitchen — on the table and on the floor. " +
+                "A red circle blinks first — run! The cat aims where you are heading and loves mice with full paws. " +
+                "A hit mouse is stunned and drops half its food for others to grab.\n" +
+                "• You are safe <b>under the table or the ramps</b> and right next to your own burrow. The cat gets faster near the end.\n\n" +
+                "The best food is on the table. Bank a little now or risk it for more?",
             ["quit"] = "Quit",
             ["your_ip"] = "Your IP: {0}",
             ["connecting"] = "Connecting…",
