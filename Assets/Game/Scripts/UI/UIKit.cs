@@ -6,10 +6,6 @@ using UnityEngine.UI;
 
 namespace MouseGame.UI
 {
-    /// <summary>
-    /// Small runtime builder for uGUI (no scene authoring needed, same look everywhere).
-    /// Canvas scales for phones in landscape (reference 1920x1080).
-    /// </summary>
     public static class UIKit
     {
         public static readonly Color Bg = new Color(0.12f, 0.10f, 0.09f, 0.88f);
@@ -30,7 +26,6 @@ namespace MouseGame.UI
             get
             {
                 if (round != null) return round;
-                // 64x64 white circle generated once (no texture asset needed)
                 const int s = 64;
                 var tex = new Texture2D(s, s, TextureFormat.RGBA32, false) { wrapMode = TextureWrapMode.Clamp, filterMode = FilterMode.Bilinear };
                 var px = new Color32[s * s];
@@ -49,7 +44,6 @@ namespace MouseGame.UI
             }
         }
 
-        // ------------------------------------------------------------------
         public static Canvas CreateCanvas(string name, int order)
         {
             var go = new GameObject(name, typeof(RectTransform), typeof(Canvas), typeof(CanvasScaler), typeof(GraphicRaycaster));
@@ -93,7 +87,6 @@ namespace MouseGame.UI
             return rt;
         }
 
-        /// <summary>Fixed-size rect anchored at a point (pivot = anchor).</summary>
         public static RectTransform Place(this RectTransform rt, Vector2 anchor, Vector2 pos, Vector2 size)
         {
             rt.anchorMin = rt.anchorMax = anchor;
@@ -170,7 +163,6 @@ namespace MouseGame.UI
             return f;
         }
 
-        /// <summary>Vertical scroll list. Returns the content transform (add rows to it).</summary>
         public static RectTransform ScrollList(Transform parent, string name, out ScrollRect scroll, float spacing = 8f)
         {
             var bg = Img(parent, name, new Color(0, 0, 0, 0.25f));
@@ -211,7 +203,6 @@ namespace MouseGame.UI
             for (int i = t.childCount - 1; i >= 0; i--) UnityEngine.Object.Destroy(t.GetChild(i).gameObject);
         }
 
-        /// <summary>Horizontal row container with layout.</summary>
         public static RectTransform Row(Transform parent, float spacing = 12f)
         {
             var rt = Rect("Row", parent);

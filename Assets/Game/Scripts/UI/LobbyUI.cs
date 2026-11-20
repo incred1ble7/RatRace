@@ -5,7 +5,6 @@ using UnityEngine.UI;
 
 namespace MouseGame.UI
 {
-    /// <summary>Lobby: players + ready state, map choice (host), chat, Start (host, only when everyone is ready).</summary>
     public class LobbyUI : MonoBehaviour
     {
         Canvas canvas;
@@ -15,7 +14,6 @@ namespace MouseGame.UI
 
         void Start()
         {
-            L10n.Changed += Rebuild;
             SessionManager.Changed += Refresh;
             Build();
             Refresh();
@@ -23,7 +21,6 @@ namespace MouseGame.UI
 
         void OnDestroy()
         {
-            L10n.Changed -= Rebuild;
             SessionManager.Changed -= Refresh;
         }
 
@@ -48,14 +45,12 @@ namespace MouseGame.UI
             var leave = UIKit.Btn(root, L10n.T("leave"), () => ConnectionManager.Instance.Leave(), UIKit.Bad, 32);
             ((RectTransform)leave.transform).Place(new Vector2(1, 1), new Vector2(-40, -35), new Vector2(240, 80));
 
-            // players
             var left = UIKit.PanelBox(root, "Players").rectTransform.Anchor(0.03f, 0.22f, 0.50f, 0.85f);
             var pt = UIKit.Label(left, L10n.T("players"), 36, TextAnchor.MiddleLeft, UIKit.Accent, FontStyle.Bold);
             pt.rectTransform.Anchor(0, 1, 1, 1, new Vector2(30, -80), new Vector2(-30, -16));
             playerList = UIKit.ScrollList(left, "List", out _, 12f);
             ((RectTransform)playerList.parent.parent).Anchor(0, 0, 1, 1, new Vector2(24, 24), new Vector2(-24, -90));
 
-            // map selection
             var mapBox = UIKit.PanelBox(root, "Map").rectTransform.Anchor(0.52f, 0.66f, 0.97f, 0.85f);
             var mt = UIKit.Label(mapBox, L10n.T("map"), 30, TextAnchor.MiddleLeft, UIKit.DimText);
             mt.rectTransform.Anchor(0, 1, 1, 1, new Vector2(30, -60), new Vector2(-30, -10));
@@ -66,11 +61,9 @@ namespace MouseGame.UI
             mapLabel = UIKit.Label(mapBox, "", 38, TextAnchor.MiddleCenter, UIKit.TextCol, FontStyle.Bold);
             mapLabel.rectTransform.Anchor(0, 0, 1, 0, new Vector2(140, 20), new Vector2(-140, 110));
 
-            // chat
             var chat = ChatPanel.Create(root);
             ((RectTransform)chat.transform).Anchor(0.52f, 0.22f, 0.97f, 0.64f);
 
-            // bottom: ready + start
             readyBtn = UIKit.Btn(root, "", () =>
             {
                 if (S != null && S.TryGet(NetworkManager.Singleton.LocalClientId, out var me)) S.SetReady(!me.Ready);

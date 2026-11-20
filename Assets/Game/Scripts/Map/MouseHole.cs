@@ -2,7 +2,6 @@ using UnityEngine;
 
 namespace MouseGame
 {
-    /// <summary>A player's burrow: food delivered into this trigger scores for the owner.</summary>
     [RequireComponent(typeof(BoxCollider))]
     public class MouseHole : MonoBehaviour
     {
@@ -14,7 +13,7 @@ namespace MouseGame
         {
             var bc = GetComponent<BoxCollider>();
             bc.isTrigger = true;
-            bc.center = new Vector3(0f, 0.4f, 0.4f);   // reaches 0.8 m into the room (forward = into room)
+            bc.center = new Vector3(0f, 0.4f, 0.4f);
             bc.size = new Vector3(1.6f, 0.8f, 1.2f);
         }
 

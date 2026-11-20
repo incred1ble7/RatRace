@@ -2,10 +2,6 @@ using UnityEngine;
 
 namespace MouseGame
 {
-    /// <summary>
-    /// Per-level look for the toon shader: the colour of the shaded side (day = warm soft, night = blue).
-    /// One global shader value, so it costs nothing at runtime.
-    /// </summary>
     [ExecuteAlways]
     public class ToonSceneLighting : MonoBehaviour
     {
@@ -19,7 +15,7 @@ namespace MouseGame
         public void Apply()
         {
             var c = shadeColor;
-            c.a = 1f;   // a > 0 tells the shader the value is set
+            c.a = 1f;
             Shader.SetGlobalColor(AmbientId, c);
         }
     }

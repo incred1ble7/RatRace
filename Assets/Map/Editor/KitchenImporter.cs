@@ -5,14 +5,6 @@ using UnityEngine.Rendering;
 
 namespace MouseGame.EditorTools
 {
-    /// <summary>
-    /// Imports Assets/Map/Models/Kitchen.fbx with mobile-friendly settings and builds Kitchen.prefab:
-    ///   Floor, Walls, Fridge, Table, Chair_L... -> separate objects, one shared material,
-    ///                      marked static so Unity batches them into a few draw calls
-    ///   COL_*           -> BoxColliders only (renderer removed)
-    ///   SPAWN/HOLE/FOOD/CATZONE/CAT empties -> gameplay marker components
-    /// Menu: Tools/Map/Rebuild Kitchen Prefab. Re-export the FBX from Blender and it rebuilds itself.
-    /// </summary>
     public class KitchenImporter : AssetPostprocessor
     {
         const string Root = "Assets/Map/";
@@ -21,7 +13,6 @@ namespace MouseGame.EditorTools
         const string MaterialPath = Root + "Materials/M_Kitchen.mat";
         public const string PrefabPath = Root + "Prefabs/Kitchen.prefab";
 
-        // ---------------- import settings ----------------
         void OnPreprocessModel()
         {
             if (!assetPath.StartsWith(Root + "Models/")) return;
@@ -42,7 +33,7 @@ namespace MouseGame.EditorTools
             mi.optimizeMeshVertices = true;
             mi.importNormals = ModelImporterNormals.Import;
             mi.importTangents = ModelImporterTangents.None;
-            mi.generateSecondaryUV = true;              // lightmap UVs, in case lighting gets baked
+            mi.generateSecondaryUV = true;
             mi.addCollider = false;
             mi.materialImportMode = ModelImporterMaterialImportMode.None;
         }
@@ -69,7 +60,6 @@ namespace MouseGame.EditorTools
                 EditorApplication.delayCall += () => Build(false);
         }
 
-        // ---------------- prefab build ----------------
         [MenuItem("Tools/Map/Rebuild Kitchen Prefab")]
         static void BuildFromMenu() => Build(true);
 
@@ -105,7 +95,6 @@ namespace MouseGame.EditorTools
                     }
                     else if (n.StartsWith("COL_"))
                     {
-                        // FBX cube is 1x1x1 (scale holds the size) -> unit BoxCollider, no renderer
                         Object.DestroyImmediate(t.GetComponent<MeshRenderer>());
                         Object.DestroyImmediate(t.GetComponent<MeshFilter>());
                         var bc = t.gameObject.AddComponent<BoxCollider>();
@@ -155,8 +144,6 @@ namespace MouseGame.EditorTools
             return bits.Length > part && int.TryParse(bits[part], out int v) ? v : 1;
         }
 
-        /// <summary>Markers: unit scale and an upright rotation (FBX axis conversion leaves empties tilted).
-        /// Spawns and holes face the middle of the room along X.</summary>
         static void FlattenScale(Transform t)
         {
             t.localScale = Vector3.one;

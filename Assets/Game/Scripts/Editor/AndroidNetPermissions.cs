@@ -4,10 +4,6 @@ using UnityEditor.Android;
 
 namespace MouseGame.EditorTools
 {
-    /// <summary>
-    /// Adds the Wi‑Fi permissions LAN discovery needs on Android (multicast lock for broadcast packets).
-    /// Runs automatically after Unity generates the Gradle project — no custom manifest to maintain.
-    /// </summary>
     public class AndroidNetPermissions : IPostGenerateGradleAndroidProject
     {
         public int callbackOrder => 0;

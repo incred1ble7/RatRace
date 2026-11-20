@@ -5,15 +5,11 @@ using UnityEngine.InputSystem;
 
 namespace MouseGame
 {
-    /// <summary>
-    /// One place for player input: touch UI (joystick + buttons) on phones, keyboard/gamepad for editor tests.
-    /// Buttons are "pressed this frame" flags consumed by the local player.
-    /// </summary>
     public static class GameInput
     {
         public static VirtualJoystick Joystick;
-        public static bool Blocked;          // e.g. chat input is focused
-        public static Vector2? BotMove;      // test bot override (AutoTestClient)
+        public static bool Blocked;
+        public static Vector2? BotMove;
 
         static bool take, dash, trap;
         static int frameTake = -1, frameDash = -1, frameTrap = -1;
@@ -80,7 +76,7 @@ namespace MouseGame
             get
             {
 #if UNITY_EDITOR
-                return true;   // show touch controls in the editor too, so they can be tested with the mouse
+                return true;
 #else
                 return Application.isMobilePlatform;
 #endif

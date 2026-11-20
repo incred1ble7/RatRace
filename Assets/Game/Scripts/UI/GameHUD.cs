@@ -8,10 +8,6 @@ using UnityEngine.UI;
 
 namespace MouseGame
 {
-    /// <summary>
-    /// Match HUD for phones: timer, scores, carried food, joystick + Take/Dash/Trap buttons,
-    /// name tags, toasts, chat, pause menu and the end-of-match results with Restart / Next level / Lobby.
-    /// </summary>
     public class GameHUD : MonoBehaviour
     {
         public static GameHUD Instance { get; private set; }
@@ -31,14 +27,12 @@ namespace MouseGame
 
         void Start()
         {
-            L10n.Changed += Rebuild;
             SessionManager.Changed += OnSessionChanged;
             Build();
         }
 
         void OnDestroy()
         {
-            L10n.Changed -= Rebuild;
             SessionManager.Changed -= OnSessionChanged;
             if (Instance == this) Instance = null;
             GameInput.Joystick = null;
@@ -55,7 +49,6 @@ namespace MouseGame
         static SessionManager S => SessionManager.Instance;
         static bool IsHost => NetworkManager.Singleton != null && NetworkManager.Singleton.IsServer;
 
-        // ================================================================ build
         void Build()
         {
             canvas = UIKit.CreateCanvas("HUD", 10);
@@ -63,13 +56,11 @@ namespace MouseGame
 
             tagsRoot = UIKit.Rect("NameTags", root).Anchor(0, 0, 1, 1);
 
-            // timer (top centre)
             var tb = UIKit.PanelBox(root, "TimerBox", UIKit.Bg);
             ((RectTransform)tb.transform).Place(new Vector2(0.5f, 1), new Vector2(0, -20), new Vector2(300, 100));
             timer = UIKit.Label(tb.transform, "0:00", 60, TextAnchor.MiddleCenter, UIKit.TextCol, FontStyle.Bold);
             timer.rectTransform.Anchor(0, 0, 1, 1);
 
-            // scores (top left)
             var sb = UIKit.PanelBox(root, "Scores", UIKit.Bg);
             ((RectTransform)sb.transform).Place(new Vector2(0, 1), new Vector2(20, -20), new Vector2(430, 230));
             scores = UIKit.Label(sb.transform, "", 34);
@@ -77,7 +68,6 @@ namespace MouseGame
             scores.alignment = TextAnchor.UpperLeft;
             scores.rectTransform.Anchor(0, 0, 1, 1, new Vector2(22, 14), new Vector2(-18, -14));
 
-            // top right: chat + menu
             var chatToggle = UIKit.Btn(root, L10n.T("chat"), ToggleChat, null, 30);
             ((RectTransform)chatToggle.transform).Place(new Vector2(1, 1), new Vector2(-200, -20), new Vector2(180, 90));
             var menuBtn = UIKit.Btn(root, "II", () => menuBox.SetActive(!menuBox.activeSelf), null, 40);
@@ -88,11 +78,9 @@ namespace MouseGame
             chatBox = cp.gameObject;
             chatBox.SetActive(false);
 
-            // carried food (above the action buttons)
             carry = UIKit.Label(root, "", 36, TextAnchor.MiddleRight, UIKit.Accent, FontStyle.Bold);
             carry.rectTransform.Place(new Vector2(1, 0), new Vector2(-40, 520), new Vector2(700, 60));
 
-            // touch controls
             bool touch = GameInput.IsTouchDevice;
             var zone = UIKit.Img(root, "JoystickZone", new Color(1, 1, 1, 0), false);
             zone.rectTransform.Anchor(0, 0, 0.45f, 0.75f);
@@ -118,7 +106,6 @@ namespace MouseGame
             hint = UIKit.Label(root, touch ? "" : L10n.T("hint_pc"), 26, TextAnchor.LowerCenter, UIKit.DimText);
             hint.rectTransform.Anchor(0.2f, 0, 0.8f, 0, new Vector2(0, 10), new Vector2(0, 60));
 
-            // centre texts
             bigText = UIKit.Label(root, "", 150, TextAnchor.MiddleCenter, UIKit.Accent, FontStyle.Bold);
             bigText.rectTransform.Anchor(0, 0.4f, 1, 0.75f);
             var sh = bigText.gameObject.AddComponent<Outline>(); sh.effectColor = new Color(0, 0, 0, 0.6f); sh.effectDistance = new Vector2(4, -4);
@@ -135,8 +122,7 @@ namespace MouseGame
             var b = UIKit.Btn(root, label, null, c, (int)(size * 0.16f));
             var rt = (RectTransform)b.transform;
             rt.Place(new Vector2(1, 0), pos, new Vector2(size, size));
-            ((Image)b.targetGraphic).type = Image.Type.Simple;   // full circle
-            // fire on press (not release) — feels better for action buttons
+            ((Image)b.targetGraphic).type = Image.Type.Simple;
             var trig = b.gameObject.AddComponent<UnityEngine.EventSystems.EventTrigger>();
             var e = new UnityEngine.EventSystems.EventTrigger.Entry { eventID = UnityEngine.EventSystems.EventTriggerType.PointerDown };
             e.callback.AddListener(_ => { if (b.interactable) a(); });
@@ -185,7 +171,6 @@ namespace MouseGame
 
         void OnSessionChanged() => lastScoresHash = 0;
 
-        // ================================================================ update
         void Update()
         {
             if (canvas == null) return;
@@ -279,7 +264,6 @@ namespace MouseGame
                 t.text = m.PlayerName + extra;
                 t.color = GameConfig.SlotColor(m.Slot.Value);
             }
-            // remove tags of despawned mice
             var dead = tags.Keys.Where(k => k == null || !NetMouse.All.Contains(k)).ToList();
             foreach (var d in dead) { if (tags[d] != null) Destroy(tags[d].gameObject); tags.Remove(d); }
         }
@@ -290,7 +274,6 @@ namespace MouseGame
             return (s / 60) + ":" + (s % 60).ToString("00");
         }
 
-        // ================================================================ results
         void ShowResults()
         {
             resultsShown = true;
@@ -313,7 +296,6 @@ namespace MouseGame
             var w = UIKit.Label(panel.transform, winner, 46, TextAnchor.MiddleCenter, UIKit.TextCol, FontStyle.Bold);
             w.rectTransform.Anchor(0, 1, 1, 1, new Vector2(0, -180), new Vector2(0, -110));
 
-            // table
             string[] cols = { "col_player", "col_score", "col_delivered", "col_hits", "col_lost", "col_traps" };
             float[] widths = { 0.30f, 0.14f, 0.14f, 0.14f, 0.14f, 0.14f };
             float top = -200f;
@@ -325,7 +307,6 @@ namespace MouseGame
                 Row(panel.transform, top - 70f * (i + 1), vals, widths, GameConfig.SlotColor(p.Slot), 38);
             }
 
-            // buttons (host decides; clients wait or leave)
             var bar = UIKit.Rect("Buttons", panel.transform).Anchor(0, 0, 1, 0, new Vector2(40, 30), new Vector2(-40, 150));
             if (IsHost)
             {

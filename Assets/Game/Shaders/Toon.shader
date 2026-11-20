@@ -1,10 +1,3 @@
-// Mobile-friendly toon shader for URP 17 (Unity 6).
-//  * stepped (cel) lighting from the main light + additional lights (night fridge light), receives shadows
-//  * tinted shadow side, soft rim light
-//  * outline: inverted hull pass, constant width in pixels.
-//    Models from our importers store smoothed normals in the tangent channel (no cracks on flat low-poly);
-//    for Unity primitives set "Outline From Tangent" off.
-// SRP Batcher compatible (all material data in UnityPerMaterial).
 Shader "MouseGame/Toon"
 {
     Properties
@@ -41,10 +34,8 @@ Shader "MouseGame/Toon"
 
         TEXTURE2D(_BaseMap);
         SAMPLER(sampler_BaseMap);
-        // per-level shade colour (set by ToonSceneLighting); no baked lighting needed
         half4 _ToonAmbient;
 
-        // quantise a 0..1 light amount into bands with soft steps
         half Cel(half x)
         {
             half n = max(1.0h, _Bands);
@@ -55,7 +46,6 @@ Shader "MouseGame/Toon"
         }
         ENDHLSL
 
-        // ------------------------------------------------------------------ main pass
         Pass
         {
             Name "ToonForward"
@@ -106,7 +96,6 @@ Shader "MouseGame/Toon"
             half3 ToonLight(Light light, half3 n, half3 albedo)
             {
                 half ndl = saturate(dot(n, light.direction));
-                // bands from the angle only; falloff stays smooth so point lights make soft pools of light
                 half lit = Cel(ndl * light.shadowAttenuation) * saturate(light.distanceAttenuation);
                 return albedo * light.color * lit;
             }
@@ -121,13 +110,12 @@ Shader "MouseGame/Toon"
                 UNITY_SETUP_INSTANCE_ID(i);
                 half3 albedo = SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, i.uv).rgb * _BaseColor.rgb;
                 half3 n = i.normalWS;
-                n = dot(n, n) > 1e-6h ? normalize(n) : half3(0, 1, 0);   // guard against degenerate normals
+                n = dot(n, n) > 1e-6h ? normalize(n) : half3(0, 1, 0);
                 half3 v = normalize(GetWorldSpaceViewDir(i.positionWS));
 
                 float4 shadowCoord = TransformWorldToShadowCoord(i.positionWS);
                 Light mainLight = GetMainLight(shadowCoord);
 
-                // shade side = albedo tinted by the level's shade colour; lit side = albedo * sun colour
                 half3 shade = _ToonAmbient.a > 0 ? _ToonAmbient.rgb : half3(0.55h, 0.55h, 0.65h);
                 shade *= _ShadowTint.rgb / max(0.001h, max(_ShadowTint.r, max(_ShadowTint.g, _ShadowTint.b)));
                 half3 color = albedo * lerp(shade, mainLight.color, CelAmount(mainLight, n));
@@ -143,7 +131,6 @@ Shader "MouseGame/Toon"
                 LIGHT_LOOP_END
             #endif
 
-                // rim on the lit side only, keeps silhouettes readable on a phone
                 half rim = pow(1.0h - saturate(dot(n, v)), 4.0h) * saturate(dot(n, mainLight.direction) + 0.3h);
                 color += albedo * mainLight.color * rim * _RimStrength;
 
@@ -152,7 +139,6 @@ Shader "MouseGame/Toon"
             ENDHLSL
         }
 
-        // ------------------------------------------------------------------ outline (inverted hull)
         Pass
         {
             Name "ToonOutline"
@@ -193,7 +179,6 @@ Shader "MouseGame/Toon"
                 float len = length(dirCS);
                 if (len > 1e-5)
                 {
-                    // constant pixel width, independent of distance and resolution
                     float2 offset = dirCS / len * _OutlineWidth * 2.0 / _ScreenParams.xy;
                     cs.xy += offset * cs.w;
                 }
@@ -208,7 +193,6 @@ Shader "MouseGame/Toon"
             ENDHLSL
         }
 
-        // ------------------------------------------------------------------ shadows
         Pass
         {
             Name "ShadowCaster"
@@ -259,7 +243,6 @@ Shader "MouseGame/Toon"
             ENDHLSL
         }
 
-        // ------------------------------------------------------------------ depth (depth prepass / Forward+)
         Pass
         {
             Name "DepthOnly"

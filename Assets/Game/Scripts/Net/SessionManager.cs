@@ -9,14 +9,12 @@ namespace MouseGame.Net
 {
     public enum SessionPhase : byte { Lobby, Loading, InGame }
 
-    /// <summary>Everything the lobby and the results screen need to know about one player.</summary>
     public struct PlayerInfo : INetworkSerializable, IEquatable<PlayerInfo>
     {
         public ulong ClientId;
         public FixedString32Bytes Name;
-        public int Slot;          // 1..4, also the mouse hole / colour
+        public int Slot;
         public bool Ready;
-        // match statistics (reset when a match starts)
         public int Score;
         public int Delivered;
         public int CatHits;
@@ -41,10 +39,6 @@ namespace MouseGame.Net
             Score == o.Score && Delivered == o.Delivered && CatHits == o.CatHits && Lost == o.Lost && TrapsHit == o.TrapsHit;
     }
 
-    /// <summary>
-    /// Persistent (DontDestroyOnLoad) network object created by the host.
-    /// Owns the lobby state, ready system, map choice, chat and moves everybody between scenes.
-    /// </summary>
     public class SessionManager : NetworkBehaviour
     {
         public static SessionManager Instance { get; private set; }
@@ -58,8 +52,8 @@ namespace MouseGame.Net
         public int PlayerCount => Players.Count;
         public MapInfo CurrentMap => GameConfig.Maps[Mathf.Clamp(MapIndex.Value, 0, GameConfig.Maps.Length - 1)];
 
-        public static event Action Changed;                         // any lobby data changed
-        public static event Action<string, string, Color> ChatReceived;  // name, text, colour
+        public static event Action Changed;
+        public static event Action<string, string, Color> ChatReceived;
         public static readonly List<(string name, string text, Color color)> ChatLog = new List<(string, string, Color)>();
 
         void Awake()
@@ -99,7 +93,6 @@ namespace MouseGame.Net
 
         public void InitHost(string lobbyName) => LobbyName.Value = new FixedString64Bytes(lobbyName.Length > 30 ? lobbyName.Substring(0, 30) : lobbyName);
 
-        // ============================== queries ==============================
         public bool TryGet(ulong clientId, out PlayerInfo info)
         {
             for (int i = 0; i < Players.Count; i++)
@@ -126,7 +119,6 @@ namespace MouseGame.Net
 
         public string NameOf(ulong clientId) => TryGet(clientId, out var p) ? p.Name.ToString() : "?";
 
-        // ============================== server: connections ==============================
         void OnClientConnected(ulong clientId)
         {
             if (IndexOf(clientId) >= 0) return;
@@ -174,7 +166,6 @@ namespace MouseGame.Net
 
         void UpdateDiscovery() => LanDiscovery.Instance?.UpdateHostInfo(LobbyName.Value.ToString(), Players.Count, Phase == SessionPhase.Lobby && Players.Count < GameConfig.MaxPlayers);
 
-        // ============================== lobby actions ==============================
         public void SetReady(bool ready) => SetReadyRpc(ready);
 
         [Rpc(SendTo.Server)]
@@ -194,7 +185,6 @@ namespace MouseGame.Net
             MapIndex.Value = ((MapIndex.Value + delta) % n + n) % n;
         }
 
-        /// <summary>Host only: everyone ready -> load the chosen map for all players.</summary>
         public bool StartMatch()
         {
             if (!IsServer || Phase != SessionPhase.Lobby || !AllReady) return false;
@@ -211,7 +201,6 @@ namespace MouseGame.Net
             NetworkManager.SceneManager.LoadScene(GameConfig.Maps[index].Scene, LoadSceneMode.Single);
         }
 
-        // ============================== after a match ==============================
         public void RestartMatch() { if (IsServer && Phase == SessionPhase.InGame) LoadMap(MapIndex.Value); }
 
         public bool HasNextLevel => MapIndex.Value + 1 < GameConfig.Maps.Length;
@@ -237,7 +226,7 @@ namespace MouseGame.Net
             else if (GameConfig.MapIndexOfScene(sceneName) >= 0)
             {
                 PhaseVar.Value = SessionPhase.InGame;
-                MatchSpawner.SpawnMatch(this);   // server spawns the match manager + players
+                MatchSpawner.SpawnMatch(this);
             }
             UpdateDiscovery();
         }
@@ -252,14 +241,12 @@ namespace MouseGame.Net
             }
         }
 
-        /// <summary>Server: modify one player's stats.</summary>
         public void Modify(ulong clientId, Func<PlayerInfo, PlayerInfo> change)
         {
             int i = IndexOf(clientId);
             if (i >= 0) Players[i] = change(Players[i]);
         }
 
-        // ============================== chat ==============================
         public void SendChat(string text)
         {
             if (string.IsNullOrWhiteSpace(text)) return;
@@ -275,7 +262,6 @@ namespace MouseGame.Net
             ChatRpc(info.Name.ToString(), text, info.Slot);
         }
 
-        /// <summary>System message (join / leave): key is localised on each client.</summary>
         void SystemChat(string key, string arg) => SystemChatRpc(key, arg);
 
         [Rpc(SendTo.ClientsAndHost)]

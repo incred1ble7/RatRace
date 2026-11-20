@@ -4,7 +4,6 @@ using UnityEngine.UI;
 
 namespace MouseGame.UI
 {
-    /// <summary>Chat box (log + input). Used in the lobby and in the match HUD.</summary>
     public class ChatPanel : MonoBehaviour
     {
         Text log;

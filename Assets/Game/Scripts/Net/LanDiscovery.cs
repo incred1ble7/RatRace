@@ -10,7 +10,6 @@ using UnityEngine;
 
 namespace MouseGame.Net
 {
-    /// <summary>A game found on the local network.</summary>
     public struct DiscoveredGame
     {
         public string Address;
@@ -22,12 +21,6 @@ namespace MouseGame.Net
         public float SeenAt;
     }
 
-    /// <summary>
-    /// Server browser over UDP broadcast (Wi‑Fi / LAN). No accounts, no internet needed.
-    ///   host:   answers "RRDISC1" with "RRHOST1|name|port|players|max|joinable"
-    ///   client: broadcasts the request and collects answers.
-    /// On Android a Wi‑Fi multicast lock is held while searching (otherwise many phones drop broadcasts).
-    /// </summary>
     public class LanDiscovery : MonoBehaviour
     {
         const string Request = "RRDISC1";
@@ -35,14 +28,12 @@ namespace MouseGame.Net
 
         public static LanDiscovery Instance { get; private set; }
 
-        // ---- host side (values updated from the main thread) ----
         volatile string hostName = "";
         volatile int hostPlayers;
         volatile bool hostJoinable = true;
         UdpClient server;
         Thread serverThread;
 
-        // ---- client side ----
         UdpClient client;
         Thread clientThread;
         readonly ConcurrentQueue<DiscoveredGame> incoming = new ConcurrentQueue<DiscoveredGame>();
@@ -75,7 +66,6 @@ namespace MouseGame.Net
             StopSearch();
         }
 
-        // ================= host =================
         public void StartHosting(string name)
         {
             StopHosting();
@@ -127,7 +117,6 @@ namespace MouseGame.Net
             }
         }
 
-        // ================= client =================
         public void Search(float seconds = 2f)
         {
             StopSearch();
@@ -196,7 +185,6 @@ namespace MouseGame.Net
             while (incoming.TryDequeue(out var g))
             {
                 g.SeenAt = Time.unscaledTime;
-                // the same host may answer on several interfaces; loopback answers are kept only if nothing better
                 string key = g.Name + ":" + g.Port;
                 if (found.TryGetValue(key, out var old) && old.Address != "127.0.0.1" && g.Address == "127.0.0.1") continue;
                 found[key] = g;
@@ -206,7 +194,6 @@ namespace MouseGame.Net
             if (client != null && !IsSearching) { StopSearch(); ListChanged?.Invoke(); }
         }
 
-        // ================= helpers =================
         static IEnumerable<IPAddress> BroadcastTargets()
         {
             var list = new List<IPAddress> { IPAddress.Broadcast, IPAddress.Loopback };
@@ -227,18 +214,17 @@ namespace MouseGame.Net
                     }
                 }
             }
-            catch { /* some platforms do not expose masks; global broadcast still works */ }
+            catch {   }
             return list;
         }
 
-        /// <summary>Best guess of this device's LAN address (shown in the menu so others can join by IP).</summary>
         public static string LocalIPv4()
         {
             try
             {
                 using (var s = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, 0))
                 {
-                    s.Connect("10.255.255.255", 1);   // no packets are sent for UDP connect
+                    s.Connect("10.255.255.255", 1);
                     return ((IPEndPoint)s.LocalEndPoint).Address.ToString();
                 }
             }

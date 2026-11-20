@@ -4,16 +4,11 @@ using UnityEngine;
 
 namespace MouseGame.EditorTools
 {
-    /// <summary>
-    /// Bakes smoothed normals into the tangent channel of our low-poly models (kitchen, mouse, cheese).
-    /// The toon outline pass pushes vertices along them, so hard-edged meshes get a closed outline
-    /// instead of cracks. Tangents are skinned too, so it also works on the animated mouse.
-    /// </summary>
     public class ToonOutlineNormals : AssetPostprocessor
     {
         static readonly string[] Folders = { "Assets/Map/Models/", "Assets/Mouse/Models/" };
 
-        public override int GetPostprocessOrder() => 100;   // after the other importers
+        public override int GetPostprocessOrder() => 100;
 
         void OnPostprocessModel(GameObject root)
         {
@@ -33,7 +28,6 @@ namespace MouseGame.EditorTools
             var normals = mesh.normals;
             if (verts.Length == 0 || normals.Length != verts.Length) return;
 
-            // average the normals of all vertices sharing a position (1 mm grid)
             var sum = new Dictionary<Vector3Int, Vector3>();
             var keys = new Vector3Int[verts.Length];
             for (int i = 0; i < verts.Length; i++)

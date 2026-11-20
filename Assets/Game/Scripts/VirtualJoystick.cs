@@ -3,10 +3,6 @@ using UnityEngine.EventSystems;
 
 namespace MouseGame
 {
-    /// <summary>
-    /// Floating on-screen joystick. Put it on a transparent full-size Image (touch zone).
-    /// The stick appears where the finger touches and returns to its rest position on release.
-    /// </summary>
     public class VirtualJoystick : MonoBehaviour, IPointerDownHandler, IDragHandler, IPointerUpHandler
     {
         [SerializeField] RectTransform background;
@@ -19,7 +15,6 @@ namespace MouseGame
         Vector2 restPosition;
         int pointerId = int.MinValue;
 
-        /// <summary>Stick direction, magnitude 0..1.</summary>
         public Vector2 Direction { get; private set; }
 
         void Awake()
@@ -30,7 +25,6 @@ namespace MouseGame
 
         void OnDisable() => Release();
 
-        /// <summary>Wire up when the UI is built from code.</summary>
         public void Setup(RectTransform bg, RectTransform stick, float maxRadius)
         {
             zone = (RectTransform)transform;
@@ -42,11 +36,10 @@ namespace MouseGame
 
         public void OnPointerDown(PointerEventData e)
         {
-            if (pointerId != int.MinValue) return;           // ignore second finger
+            if (pointerId != int.MinValue) return;
             pointerId = e.pointerId;
             if (background != null && ScreenToLocal(zone, e, out var local))
             {
-                // local is relative to the zone pivot; convert to the background's anchor reference
                 Vector2 anchorRef = zone.rect.min + Vector2.Scale(zone.rect.size, background.anchorMin);
                 background.anchoredPosition = local - anchorRef;
             }

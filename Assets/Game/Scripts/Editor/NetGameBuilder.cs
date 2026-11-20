@@ -11,10 +11,6 @@ using UnityEngine.SceneManagement;
 
 namespace MouseGame.EditorTools
 {
-    /// <summary>
-    /// Tools/Net/Build Everything: network prefabs, materials, Boot / MainMenu / Lobby / level scenes, Build Settings.
-    /// Safe to run again (overwrites what it made).
-    /// </summary>
     public static class NetGameBuilder
     {
         const string Root = "Assets/Game/";
@@ -57,7 +53,6 @@ namespace MouseGame.EditorTools
             Debug.Log("[Net] Everything built. Press Play in the Boot scene.");
         }
 
-        // ------------------------------------------------------------ prefabs
         static GameObject BuildSession()
         {
             var go = new GameObject("Session");
@@ -79,7 +74,7 @@ namespace MouseGame.EditorTools
             nt.SyncRotAngleX = false; nt.SyncRotAngleY = true; nt.SyncRotAngleZ = false;
             nt.SyncScaleX = nt.SyncScaleY = nt.SyncScaleZ = false;
             nt.Interpolate = true;
-            nt.UseHalfFloatPrecision = true;   // less bandwidth on mobile
+            nt.UseHalfFloatPrecision = true;
             var cc = go.AddComponent<CharacterController>();
             cc.height = 0.24f; cc.radius = 0.11f; cc.center = new Vector3(0f, 0.13f, 0f);
             cc.stepOffset = 0.05f; cc.skinWidth = 0.01f; cc.minMoveDistance = 0f; cc.slopeLimit = 45f;
@@ -149,7 +144,6 @@ namespace MouseGame.EditorTools
             go.AddComponent<NetworkObject>();
             var mm = go.AddComponent<MatchManager>();
 
-            // a big sitting cat behind the table (decor, no colliders)
             var cat = new GameObject("CatBody").transform;
             cat.SetParent(go.transform, false);
             Prim(PrimitiveType.Capsule, cat, "Body", new Vector3(0, 2.0f, 0.3f), new Vector3(2.4f, 2.2f, 2.0f), fur);
@@ -165,15 +159,13 @@ namespace MouseGame.EditorTools
             earR.transform.localRotation = Quaternion.Euler(0, 0, -20);
             var tail = Prim(PrimitiveType.Capsule, cat, "Tail", new Vector3(1.5f, 0.5f, 0.9f), new Vector3(0.45f, 1.6f, 0.45f), dark);
             tail.transform.localRotation = Quaternion.Euler(0, 0, 70);
-            // the cat is solid: mice walk around it, not through it
             var body = cat.gameObject.AddComponent<CapsuleCollider>();
             body.direction = 1;
             body.center = new Vector3(0f, 2.2f, 0.3f);
             body.radius = 1.2f;
             body.height = 4.4f;
-            tail.AddComponent<CapsuleCollider>();   // fits the capsule primitive, follows its scale/rotation
+            tail.AddComponent<CapsuleCollider>();
 
-            // the striking paw (pivot = bottom of the pad)
             var paw = new GameObject("Paw").transform;
             paw.SetParent(go.transform, false);
             Prim(PrimitiveType.Sphere, paw, "Pad", new Vector3(0, 0.45f, 0), new Vector3(1.5f, 0.9f, 1.6f), fur);
@@ -194,7 +186,6 @@ namespace MouseGame.EditorTools
             return Save(go, "Match");
         }
 
-        // ------------------------------------------------------------ scenes
         static void BuildBootScene(GameObject session, GameObject match, GameObject player, GameObject food, GameObject trap)
         {
             var scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
@@ -229,7 +220,7 @@ namespace MouseGame.EditorTools
             cam.tag = "MainCamera";
             cam.clearFlags = CameraClearFlags.SolidColor;
             cam.backgroundColor = new Color(0.16f, 0.12f, 0.10f);
-            cam.cullingMask = 0;   // UI only, nothing 3D to draw
+            cam.cullingMask = 0;
             var go = new GameObject("UI");
             go.AddComponent<Bootstrap>();
             go.AddComponent(ui);
@@ -257,13 +248,11 @@ namespace MouseGame.EditorTools
             RenderSettings.ambientMode = AmbientMode.Flat;
             RenderSettings.ambientLight = night ? new Color(0.13f, 0.15f, 0.25f) : new Color(0.55f, 0.52f, 0.50f);
             RenderSettings.fog = false;
-            // toon shade colour for this level (warm by day, moonlit blue at night)
             new GameObject("ToonLighting").AddComponent<ToonSceneLighting>().shadeColor =
                 night ? new Color(0.22f, 0.26f, 0.46f) : new Color(0.68f, 0.60f, 0.64f);
 
             if (night)
             {
-                // the open fridge glows into the dark kitchen (one point light, per-pixel on mobile)
                 var fl = new GameObject("FridgeLight").AddComponent<Light>();
                 fl.type = LightType.Point;
                 fl.range = 12f;
@@ -290,7 +279,6 @@ namespace MouseGame.EditorTools
             EditorSceneManager.SaveScene(scene, SceneDir + name + ".unity");
         }
 
-        // ------------------------------------------------------------ helpers
         static GameObject Save(GameObject go, string name)
         {
             var path = PrefabDir + name + ".prefab";
@@ -330,11 +318,11 @@ namespace MouseGame.EditorTools
             else m.shader = shader;
             m.SetColor("_BaseColor", c);
             if (m.HasProperty("_Smoothness")) m.SetFloat("_Smoothness", 0.1f);
-            if (m.HasProperty("_OutlineFromTangent")) m.SetFloat("_OutlineFromTangent", 0f);   // Unity primitives: smooth normals already
+            if (m.HasProperty("_OutlineFromTangent")) m.SetFloat("_OutlineFromTangent", 0f);
             if (transparent)
             {
-                m.SetFloat("_Surface", 1f);          // Transparent
-                m.SetFloat("_Blend", 0f);            // Alpha
+                m.SetFloat("_Surface", 1f);
+                m.SetFloat("_Blend", 0f);
                 m.SetFloat("_ZWrite", 0f);
                 m.SetFloat("_SrcBlend", (float)BlendMode.SrcAlpha);
                 m.SetFloat("_DstBlend", (float)BlendMode.OneMinusSrcAlpha);

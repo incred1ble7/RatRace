@@ -3,10 +3,6 @@ using UnityEngine;
 
 namespace MouseGame
 {
-    /// <summary>
-    /// Root of the map prefab. Gives gameplay / network code one place to find
-    /// spawns, holes, food points and cat zones (filled by the prefab builder, no runtime searching).
-    /// </summary>
     public class KitchenMap : MonoBehaviour
     {
         public static KitchenMap Instance { get; private set; }
@@ -26,7 +22,6 @@ namespace MouseGame
         void Awake() => Instance = this;
         void OnDestroy() { if (Instance == this) Instance = null; }
 
-        /// <summary>Spawn for player slot 1..N (wraps around).</summary>
         public SpawnPoint GetSpawn(int slot) => spawns.Length == 0 ? null : spawns[(Mathf.Max(1, slot) - 1) % spawns.Length];
         public MouseHole GetHole(int slot) => holes.FirstOrDefault(h => h.index == slot);
 

@@ -5,11 +5,6 @@ using UnityEngine;
 
 namespace MouseGame
 {
-    /// <summary>
-    /// Networked player mouse.
-    ///  * Movement is owner-authoritative (smooth on phones); NetworkTransform (Owner mode) syncs it.
-    ///  * Everything that scores or hurts is decided by the server: carried food, stun, slow, delivery.
-    /// </summary>
     [RequireComponent(typeof(CharacterController))]
     public class NetMouse : NetworkBehaviour
     {
@@ -17,8 +12,8 @@ namespace MouseGame
         public static NetMouse Local { get; private set; }
 
         [SerializeField] MouseVisual visual;
-        [SerializeField] GameObject carryVisualPrefab;   // non-networked cheese model
-        [SerializeField] Material[] ringMaterials;        // one per slot colour (assets, so shaders are kept in builds)
+        [SerializeField] GameObject carryVisualPrefab;
+        [SerializeField] Material[] ringMaterials;
 
         public readonly NetworkVariable<int> Slot = new NetworkVariable<int>(1);
         public readonly NetworkVariable<int> CarriedCount = new NetworkVariable<int>(0);
@@ -35,7 +30,6 @@ namespace MouseGame
         Vector3 spawnPos;
         Quaternion spawnRot;
 
-        // visuals
         Vector3 lastPos;
         float shownSpeed;
         Transform carried;
@@ -69,7 +63,7 @@ namespace MouseGame
             }
             else
             {
-                cc.enabled = false;   // remote mice are moved by NetworkTransform only
+                cc.enabled = false;
             }
             spawnPos = transform.position;
             spawnRot = transform.rotation;
@@ -87,7 +81,6 @@ namespace MouseGame
             if (Local == this) Local = null;
         }
 
-        // ================================================================ update
         void Update()
         {
             if (!IsSpawned) return;
@@ -112,7 +105,7 @@ namespace MouseGame
             if (Time.time < dashUntil) speed *= GameConfig.DashSpeedMultiplier;
             velocity = Vector3.MoveTowards(velocity, wish * speed, 12f * Time.deltaTime);
             if (Time.time < dashUntil && wish.sqrMagnitude < 0.01f)
-                velocity = transform.forward * GameConfig.MoveSpeed * GameConfig.DashSpeedMultiplier;   // dash even from standstill
+                velocity = transform.forward * GameConfig.MoveSpeed * GameConfig.DashSpeedMultiplier;
 
             if (wish.sqrMagnitude > 0.0001f)
                 transform.rotation = Quaternion.RotateTowards(transform.rotation, Quaternion.LookRotation(wish), 720f * Time.deltaTime);
@@ -153,7 +146,6 @@ namespace MouseGame
             verticalVelocity = 0f;
         }
 
-        /// <summary>Server -> owner: teleport (match start / restart).</summary>
         [Rpc(SendTo.Owner)]
         public void TeleportRpc(Vector3 pos, Quaternion rot)
         {
@@ -162,13 +154,12 @@ namespace MouseGame
             Respawn();
         }
 
-        // ================================================================ server requests
         [Rpc(SendTo.Server)]
         void TakeRpc(NetworkObjectReference foodRef)
         {
             if (!InputEnabled.Value || IsStunned || CarriedCount.Value >= GameConfig.MaxCarry) return;
             if (!foodRef.TryGet(out var no) || !no.TryGetComponent(out FoodItem food) || !food.IsSpawned) return;
-            if (Vector3.Distance(food.transform.position, transform.position) > GameConfig.PickupRadius + 0.6f) return; // lag tolerance
+            if (Vector3.Distance(food.transform.position, transform.position) > GameConfig.PickupRadius + 0.6f) return;
             CarriedCount.Value += 1;
             CarriedValue.Value += food.Value.Value;
             MatchManager.Instance?.OnFoodTaken(food);
@@ -181,7 +172,6 @@ namespace MouseGame
             MatchManager.Instance?.PlaceTrap(this, pos);
         }
 
-        /// <summary>Server: clear carried food and return (count, value).</summary>
         public (int count, int value) ServerTakeAllFood()
         {
             var r = (CarriedCount.Value, CarriedValue.Value);
@@ -190,11 +180,9 @@ namespace MouseGame
             return r;
         }
 
-        // ================================================================ feedback to the owner
         [Rpc(SendTo.Owner)]
         public void NotifyRpc(string key, int arg) => GameHUD.Instance?.Toast(UI.L10n.F(key, arg), key == "delivered");
 
-        // ================================================================ visuals
         void UpdateVisuals()
         {
             Vector3 p = transform.position;
@@ -206,7 +194,6 @@ namespace MouseGame
 
             if (model != null)
             {
-                // squashed while stunned by the cat
                 Vector3 target = IsStunned ? new Vector3(1.25f, 0.45f, 1.25f) : Vector3.one;
                 model.localScale = Vector3.Lerp(model.localScale, target, 1f - Mathf.Exp(-12f * Time.deltaTime));
             }
